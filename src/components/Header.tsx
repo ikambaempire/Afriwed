@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isAdmin, isVendor, signOut } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -22,17 +24,30 @@ const Header = () => {
           <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Find Vendors
           </Link>
-          <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Categories
-          </Link>
-          <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            How It Works
-          </Link>
+          {isVendor && (
+            <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <LayoutDashboard className="w-4 h-4 inline mr-1" />Vendor Dashboard
+            </Link>
+          )}
+          {isAdmin && (
+            <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <ShieldCheck className="w-4 h-4 inline mr-1" />Admin
+            </Link>
+          )}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm">Sign In</Button>
-          <Button size="sm">List Your Business</Button>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />Sign Out</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign In</Link></Button>
+              <Button size="sm" asChild><Link to="/auth">List Your Business</Link></Button>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -52,15 +67,31 @@ const Header = () => {
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Find Vendors
             </Link>
-            <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              Categories
-            </Link>
-            <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              How It Works
-            </Link>
+            {isVendor && (
+              <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Vendor Dashboard
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Admin Panel
+              </Link>
+            )}
             <div className="flex gap-2 pt-2">
-              <Button variant="ghost" size="sm" className="flex-1">Sign In</Button>
-              <Button size="sm" className="flex-1">List Your Business</Button>
+              {user ? (
+                <Button variant="ghost" size="sm" className="flex-1" onClick={() => { signOut(); setIsOpen(false); }}>
+                  <LogOut className="w-4 h-4 mr-1" />Sign Out
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="flex-1" asChild>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>Sign In</Link>
+                  </Button>
+                  <Button size="sm" className="flex-1" asChild>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>List Your Business</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
