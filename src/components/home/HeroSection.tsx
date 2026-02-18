@@ -22,7 +22,7 @@ const HeroSection = () => (
         transition={{ duration: 0.8 }}
       >
         <p className="text-primary-foreground/80 font-sans text-sm tracking-[0.2em] uppercase mb-4">
-          Rwanda's Premier Wedding Marketplace
+          Haruwa — Rwanda's Wedding Marketplace
         </p>
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight mb-6">
           Plan Your Dream
@@ -37,7 +37,10 @@ const HeroSection = () => (
             <Link to="/vendors">Find Vendors</Link>
           </Button>
           <Button asChild variant="hero-outline" size="lg" className="text-base px-8 py-6 rounded-full">
-            <Link to="/">List Your Business</Link>
+            <Link to="/planning">Plan My Wedding</Link>
+          </Button>
+          <Button asChild variant="hero-outline" size="lg" className="text-base px-8 py-6 rounded-full">
+            <Link to="/auth?tab=vendor">List Your Business</Link>
           </Button>
         </div>
       </motion.div>
