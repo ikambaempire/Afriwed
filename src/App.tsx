@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import VendorDashboard from "./pages/VendorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Planning from "./pages/Planning";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/vendor-dashboard" element={<VendorDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/planning" element={<Planning />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
