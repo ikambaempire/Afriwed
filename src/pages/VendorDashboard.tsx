@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import Header from "@/components/Header";
+import BookingCalendar from "@/components/vendor/BookingCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,13 +138,19 @@ const VendorDashboard = () => {
             <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><ImageIcon className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Media Files</p><p className="text-xl font-bold text-foreground">{media.length}</p></div></div></CardContent></Card>
           </div>
 
-          <Tabs defaultValue="media" className="space-y-6">
+          <Tabs defaultValue="calendar" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="earnings">Earnings</TabsTrigger>
             </TabsList>
+
+            {/* Calendar Tab */}
+            <TabsContent value="calendar">
+              <BookingCalendar bookings={bookings} />
+            </TabsContent>
 
             {/* Media Tab */}
             <TabsContent value="media">

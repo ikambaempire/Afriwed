@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
@@ -27,6 +27,11 @@ const Header = () => {
           <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Plan Wedding
           </Link>
+          {user && (
+            <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <MessageCircle className="w-4 h-4 inline mr-1" />Messages
+            </Link>
+          )}
           {isVendor && (
             <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               <LayoutDashboard className="w-4 h-4 inline mr-1" />Vendor Dashboard
@@ -73,6 +78,11 @@ const Header = () => {
             <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Plan Wedding
             </Link>
+            {user && (
+              <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Messages
+              </Link>
+            )}
             {isVendor && (
               <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
                 Vendor Dashboard
