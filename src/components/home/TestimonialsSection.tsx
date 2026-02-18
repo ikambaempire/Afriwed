@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 const testimonials = [
   {
     name: "Diane & Jean-Pierre",
-    text: "Royal Knot made our wedding planning so effortless. We found our venue, photographer, and caterer all in one afternoon!",
+    text: "Haruwa made our wedding planning so effortless. We found our venue, photographer, and caterer all in one afternoon!",
     rating: 5,
   },
   {

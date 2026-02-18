@@ -14,7 +14,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-2">
           <Heart className="w-6 h-6 text-primary fill-primary" />
           <span className="font-display text-xl font-bold text-foreground tracking-tight">
-            Royal Knot
+            Haruwa
           </span>
           <span className="text-xs font-sans text-muted-foreground hidden sm:inline">Rwanda</span>
         </Link>
@@ -23,6 +23,9 @@ const Header = () => {
         <nav className="hidden md:flex items-center gap-6">
           <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Find Vendors
+          </Link>
+          <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Plan Wedding
           </Link>
           {isVendor && (
             <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
@@ -45,7 +48,7 @@ const Header = () => {
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign In</Link></Button>
-              <Button size="sm" asChild><Link to="/auth">List Your Business</Link></Button>
+              <Button size="sm" asChild><Link to="/auth?tab=vendor">List Your Business</Link></Button>
             </>
           )}
         </div>
@@ -66,6 +69,9 @@ const Header = () => {
           <nav className="flex flex-col gap-3 py-3">
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Find Vendors
+            </Link>
+            <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+              Plan Wedding
             </Link>
             {isVendor && (
               <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>

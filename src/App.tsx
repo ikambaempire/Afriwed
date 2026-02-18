@@ -10,6 +10,7 @@ import VendorProfile from "./pages/VendorProfile";
 import Auth from "./pages/Auth";
 import VendorDashboard from "./pages/VendorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Planning from "./pages/Planning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/vendor-dashboard" element={<VendorDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/planning" element={<Planning />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
