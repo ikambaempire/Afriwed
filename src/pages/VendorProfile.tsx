@@ -1,50 +1,135 @@
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+} from "@/components/ui/dialog";
 import { Star, MapPin, MessageCircle, Calendar, Check, Clock, Users } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
-const vendorData: Record<string, {
-  name: string; category: string; location: string; rating: number; reviews: number;
-  about: string; coverImage: string; services: { name: string; price: string; description: string }[];
-  gallery: string[];
-}> = {
-  "1": {
-    name: "Serena Kigali Garden",
-    category: "Venues",
-    location: "Kigali, Rwanda",
-    rating: 4.9,
-    reviews: 87,
-    about: "Serena Kigali Garden is one of Rwanda's most prestigious wedding venues, offering breathtaking outdoor and indoor event spaces surrounded by lush tropical gardens. With a capacity of up to 500 guests, our venue provides world-class catering, impeccable service, and a magical atmosphere for your special day.",
-    coverImage: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&h=500&fit=crop",
-    services: [
-      { name: "Silver Package", price: "500,000 RWF", description: "Venue rental, basic decoration, 100 guests" },
-      { name: "Gold Package", price: "1,200,000 RWF", description: "Full venue, premium décor, catering for 200 guests" },
-      { name: "Platinum Package", price: "2,500,000 RWF", description: "All-inclusive, 500 guests, live entertainment" },
-    ],
-    gallery: [
-      "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1478146059778-26028b07395a?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1530023367847-a683933f4172?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=300&fit=crop",
-    ],
-  },
+const defaultImages: Record<string, string> = {
+  venues: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&h=500&fit=crop",
+  photographers: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=1200&h=500&fit=crop",
+  catering: "https://images.unsplash.com/photo-1555244162-803834f70033?w=1200&h=500&fit=crop",
+  decorators: "https://images.unsplash.com/photo-1478146059778-26028b07395a?w=1200&h=500&fit=crop",
+  makeup_artists: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1200&h=500&fit=crop",
+  sound_lighting: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&h=500&fit=crop",
+  car_hire: "https://images.unsplash.com/photo-1549924231-f129b911e442?w=1200&h=500&fit=crop",
+  mc_entertainment: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&h=500&fit=crop",
+  videographers: "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=1200&h=500&fit=crop",
+  wedding_planners: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1200&h=500&fit=crop",
 };
 
-const fallback = vendorData["1"];
-
-const reviewsData = [
-  { name: "Diane M.", rating: 5, text: "Absolutely stunning venue. The gardens were breathtaking and the staff was incredibly professional.", date: "2 weeks ago" },
-  { name: "Jean-Pierre K.", rating: 5, text: "Our wedding was magical thanks to this venue. Everything was perfect from start to finish.", date: "1 month ago" },
-  { name: "Grace N.", rating: 4, text: "Beautiful location with great service. Would highly recommend for any wedding.", date: "2 months ago" },
-];
+const categoryLabels: Record<string, string> = {
+  venues: "Venues", photographers: "Photographers", videographers: "Videographers",
+  decorators: "Decorators", catering: "Catering", makeup_artists: "Makeup Artists",
+  mc_entertainment: "MC & Entertainment", car_hire: "Car Hire",
+  sound_lighting: "Sound & Lighting", wedding_planners: "Wedding Planners",
+};
 
 const VendorProfile = () => {
   const { id } = useParams();
-  const vendor = vendorData[id || "1"] || fallback;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [vendor, setVendor] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [media, setMedia] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Booking form
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingDate, setBookingDate] = useState("");
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchVendor = async () => {
+      const [vRes, sRes, mRes] = await Promise.all([
+        supabase.from("vendors").select("*").eq("id", id).maybeSingle(),
+        supabase.from("vendor_services").select("*").eq("vendor_id", id).order("price"),
+        supabase.from("vendor_media").select("*").eq("vendor_id", id).order("created_at", { ascending: false }),
+      ]);
+      setVendor(vRes.data);
+      setServices(sRes.data ?? []);
+      setMedia(mRes.data ?? []);
+      setLoading(false);
+      if (sRes.data?.length) setSelectedService(sRes.data[0]);
+    };
+    fetchVendor();
+  }, [id]);
+
+  const handleBooking = async () => {
+    if (!user) {
+      toast({ title: "Please sign in", description: "You need to be logged in to book a vendor.", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+    if (!bookingDate) {
+      toast({ title: "Select a date", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("bookings").insert({
+      vendor_id: id!,
+      client_id: user.id,
+      event_date: bookingDate,
+      total_amount: selectedService?.price || 0,
+      deposit_amount: Math.round((selectedService?.price || 0) * 0.3),
+      notes: bookingNotes || `${selectedService?.name || "Service"} booking`,
+      service_id: selectedService?.id || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast({ title: "Booking failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Booking requested!", description: "The vendor will review and confirm your booking." });
+      setBookingOpen(false);
+      setBookingDate("");
+      setBookingNotes("");
+    }
+  };
+
+  const startChat = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (!vendor) return;
+    navigate("/messages");
+  };
+
+  if (loading) return (
+    <>
+      <Header />
+      <div className="min-h-screen flex items-center justify-center pt-16">
+        <p className="text-muted-foreground">Loading vendor...</p>
+      </div>
+    </>
+  );
+
+  if (!vendor) return (
+    <>
+      <Header />
+      <div className="min-h-screen flex flex-col items-center justify-center pt-16 gap-4">
+        <h2 className="font-display text-2xl font-bold text-foreground">Vendor Not Found</h2>
+        <Button onClick={() => navigate("/vendors")}>Browse Vendors</Button>
+      </div>
+    </>
+  );
+
+  const coverImage = vendor.cover_image_url || defaultImages[vendor.category] || defaultImages.venues;
+  const galleryImages = media.filter(m => m.media_type === "image");
 
   return (
     <>
@@ -52,12 +137,11 @@ const VendorProfile = () => {
       <main className="pt-16">
         {/* Cover */}
         <div className="relative h-64 md:h-80">
-          <img src={vendor.coverImage} alt={vendor.name} className="w-full h-full object-cover" />
+          <img src={coverImage} alt={vendor.business_name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
         </div>
 
         <div className="container mx-auto px-4">
-          {/* Info header */}
           <motion.div
             className="relative -mt-16 bg-card rounded-xl shadow-card p-6 md:p-8 mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -65,40 +149,89 @@ const VendorProfile = () => {
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <span className="text-xs font-medium text-primary bg-teal-light px-3 py-1 rounded-full">
-                  {vendor.category}
-                </span>
-                <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mt-3">{vendor.name}</h1>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+                    {categoryLabels[vendor.category] || vendor.category}
+                  </span>
+                  {vendor.is_verified && (
+                    <Badge className="bg-primary text-primary-foreground text-xs"><Check className="w-3 h-3 mr-1" />Verified</Badge>
+                  )}
+                </div>
+                <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">{vendor.business_name}</h1>
                 <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {vendor.location}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {vendor.location || "Rwanda"}</span>
                   <span className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-gold fill-gold" /> {vendor.rating} ({vendor.reviews} reviews)
+                    <Star className="w-4 h-4 text-gold fill-gold" /> {vendor.rating || 0} ({vendor.review_count || 0} reviews)
                   </span>
                 </div>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" className="rounded-full gap-2">
+                <Button variant="outline" className="rounded-full gap-2" onClick={startChat}>
                   <MessageCircle className="w-4 h-4" /> Chat
                 </Button>
-                <Button variant="hero" className="rounded-full gap-2">
-                  <Calendar className="w-4 h-4" /> Book Now
-                </Button>
+                <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="hero" className="rounded-full gap-2">
+                      <Calendar className="w-4 h-4" /> Book Now
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Book {vendor.business_name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Event Date</Label>
+                        <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                      </div>
+                      {services.length > 0 && (
+                        <div className="space-y-2">
+                          <Label>Package</Label>
+                          <div className="space-y-2">
+                            {services.map(s => (
+                              <button
+                                key={s.id}
+                                onClick={() => setSelectedService(s)}
+                                className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-colors ${
+                                  selectedService?.id === s.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"
+                                }`}
+                              >
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">{s.name}</p>
+                                  {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
+                                </div>
+                                <p className="text-sm font-semibold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label>Notes (optional)</Label>
+                        <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requests..." rows={3} />
+                      </div>
+                      <Button onClick={handleBooking} className="w-full" disabled={submitting}>
+                        {submitting ? "Submitting..." : `Request Booking${selectedService ? ` – ${(selectedService.price || 0).toLocaleString()} RWF` : ""}`}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">You won't be charged yet. The vendor will confirm first.</p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-3 gap-8 pb-16">
-            {/* Left content */}
             <div className="lg:col-span-2 space-y-8">
               {/* About */}
               <section>
                 <h2 className="font-display text-xl font-semibold text-foreground mb-4">About</h2>
-                <p className="text-muted-foreground leading-relaxed">{vendor.about}</p>
+                <p className="text-muted-foreground leading-relaxed">{vendor.description || "No description provided yet."}</p>
                 <div className="grid grid-cols-3 gap-4 mt-6">
                   {[
                     { icon: Clock, label: "Response Time", value: "< 2 hours" },
-                    { icon: Users, label: "Capacity", value: "Up to 500" },
-                    { icon: Check, label: "Verified", value: "Since 2020" },
+                    { icon: Users, label: "Bookings", value: `${vendor.review_count || 0}+` },
+                    { icon: Check, label: "Status", value: vendor.is_verified ? "Verified" : "Active" },
                   ].map((stat) => (
                     <div key={stat.label} className="bg-muted p-4 rounded-lg text-center">
                       <stat.icon className="w-5 h-5 text-primary mx-auto mb-2" />
@@ -110,61 +243,59 @@ const VendorProfile = () => {
               </section>
 
               {/* Packages */}
-              <section>
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Packages & Pricing</h2>
-                <div className="space-y-4">
-                  {vendor.services.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{s.name}</h3>
-                        <p className="text-sm text-muted-foreground">{s.description}</p>
+              {services.length > 0 && (
+                <section>
+                  <h2 className="font-display text-xl font-semibold text-foreground mb-4">Packages & Pricing</h2>
+                  <div className="space-y-4">
+                    {services.map((s) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
+                        <div>
+                          <h3 className="font-semibold text-foreground">{s.name}</h3>
+                          <p className="text-sm text-muted-foreground">{s.description}</p>
+                          {s.duration && <p className="text-xs text-muted-foreground mt-1">{s.duration}</p>}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-display font-bold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 rounded-full text-xs"
+                            onClick={() => { setSelectedService(s); setBookingOpen(true); }}
+                          >
+                            Select
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-display font-bold text-primary">{s.price}</p>
-                        <Button size="sm" variant="outline" className="mt-1 rounded-full text-xs">Select</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* Gallery */}
-              <section>
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Gallery</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {vendor.gallery.map((img, i) => (
-                    <div key={i} className="aspect-[4/3] rounded-lg overflow-hidden">
-                      <img src={img} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {galleryImages.length > 0 && (
+                <section>
+                  <h2 className="font-display text-xl font-semibold text-foreground mb-4">Gallery</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {galleryImages.map((m) => (
+                      <div key={m.id} className="aspect-[4/3] rounded-lg overflow-hidden">
+                        <img src={m.url} alt={m.caption || "Gallery"} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Reviews */}
-              <section>
-                <h2 className="font-display text-xl font-semibold text-foreground mb-4">Reviews</h2>
-                <div className="space-y-4">
-                  {reviewsData.map((r, i) => (
-                    <div key={i} className="p-4 bg-card border border-border rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                            {r.name[0]}
-                          </div>
-                          <span className="font-semibold text-sm text-foreground">{r.name}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{r.date}</span>
-                      </div>
-                      <div className="flex gap-0.5 mb-2">
-                        {Array.from({ length: r.rating }).map((_, j) => (
-                          <Star key={j} className="w-3 h-3 text-gold fill-gold" />
-                        ))}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{r.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {/* Contact info */}
+              {(vendor.phone || vendor.email) && (
+                <section>
+                  <h2 className="font-display text-xl font-semibold text-foreground mb-4">Contact</h2>
+                  <div className="bg-muted p-4 rounded-lg space-y-2">
+                    {vendor.phone && <p className="text-sm text-foreground">📞 {vendor.phone}</p>}
+                    {vendor.email && <p className="text-sm text-foreground">✉️ {vendor.email}</p>}
+                    {vendor.location && <p className="text-sm text-foreground">📍 {vendor.location}</p>}
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Sticky sidebar */}
@@ -173,14 +304,20 @@ const VendorProfile = () => {
                 <h3 className="font-display text-lg font-semibold text-foreground mb-4">Quick Booking</h3>
                 <p className="text-sm text-muted-foreground mb-4">Select a date and package to get started.</p>
                 <div className="space-y-3">
-                  <input type="date" className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground" />
-                  <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
-                    {vendor.services.map((s) => (
-                      <option key={s.name}>{s.name} – {s.price}</option>
-                    ))}
-                  </select>
-                  <Button className="w-full rounded-full" variant="hero">
-                    Request Booking
+                  <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                  {services.length > 0 && (
+                    <select
+                      className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
+                      value={selectedService?.id || ""}
+                      onChange={e => setSelectedService(services.find(s => s.id === e.target.value) || null)}
+                    >
+                      {services.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name} – {(s.price || 0).toLocaleString()} RWF</option>
+                      ))}
+                    </select>
+                  )}
+                  <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting}>
+                    {submitting ? "Submitting..." : "Request Booking"}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground text-center mt-3">You won't be charged yet</p>
