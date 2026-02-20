@@ -45,7 +45,6 @@ const VendorProfile = () => {
   const [media, setMedia] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Booking form
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingDate, setBookingDate] = useState("");
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -106,6 +105,46 @@ const VendorProfile = () => {
       return;
     }
     if (!vendor) return;
+
+    // Check for existing 1-on-1 conversation
+    const { data: myConvos } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (myConvos) {
+      for (const mc of myConvos) {
+        const { data: parts } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", mc.conversation_id);
+        const { data: convo } = await supabase
+          .from("conversations")
+          .select("*")
+          .eq("id", mc.conversation_id)
+          .eq("is_group", false)
+          .maybeSingle();
+        if (convo && parts?.length === 2 && parts.some(p => p.user_id === vendor.user_id)) {
+          navigate("/messages");
+          return;
+        }
+      }
+    }
+
+    // Create new conversation
+    const { data: convo } = await supabase
+      .from("conversations")
+      .insert({ name: vendor.business_name, is_group: false, created_by: user.id })
+      .select()
+      .single();
+
+    if (!convo) return;
+
+    await supabase.from("conversation_participants").insert([
+      { conversation_id: convo.id, user_id: user.id },
+      { conversation_id: convo.id, user_id: vendor.user_id },
+    ]);
+
     navigate("/messages");
   };
 
@@ -167,7 +206,7 @@ const VendorProfile = () => {
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" className="rounded-full gap-2" onClick={startChat}>
-                  <MessageCircle className="w-4 h-4" /> Chat
+                  <MessageCircle className="w-4 h-4" /> Chat Now
                 </Button>
                 <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
                   <DialogTrigger asChild>
@@ -300,27 +339,32 @@ const VendorProfile = () => {
 
             {/* Sticky sidebar */}
             <div className="hidden lg:block">
-              <div className="sticky top-24 bg-card border border-border rounded-xl p-6 shadow-card">
-                <h3 className="font-display text-lg font-semibold text-foreground mb-4">Quick Booking</h3>
-                <p className="text-sm text-muted-foreground mb-4">Select a date and package to get started.</p>
-                <div className="space-y-3">
-                  <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
-                  {services.length > 0 && (
-                    <select
-                      className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
-                      value={selectedService?.id || ""}
-                      onChange={e => setSelectedService(services.find(s => s.id === e.target.value) || null)}
-                    >
-                      {services.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} – {(s.price || 0).toLocaleString()} RWF</option>
-                      ))}
-                    </select>
-                  )}
-                  <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting}>
-                    {submitting ? "Submitting..." : "Request Booking"}
-                  </Button>
+              <div className="sticky top-24 bg-card border border-border rounded-xl p-6 shadow-card space-y-4">
+                <h3 className="font-display text-lg font-semibold text-foreground">Quick Actions</h3>
+                <Button className="w-full rounded-full gap-2" variant="outline" onClick={startChat}>
+                  <MessageCircle className="w-4 h-4" /> Chat Now
+                </Button>
+                <div className="border-t border-border pt-4">
+                  <h4 className="text-sm font-medium text-foreground mb-3">Quick Booking</h4>
+                  <div className="space-y-3">
+                    <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                    {services.length > 0 && (
+                      <select
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
+                        value={selectedService?.id || ""}
+                        onChange={e => setSelectedService(services.find(s => s.id === e.target.value) || null)}
+                      >
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} – {(s.price || 0).toLocaleString()} RWF</option>
+                        ))}
+                      </select>
+                    )}
+                    <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting}>
+                      {submitting ? "Submitting..." : "Request Booking"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center mt-3">You won't be charged yet</p>
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-3">You won't be charged yet</p>
               </div>
             </div>
           </div>

@@ -33,7 +33,7 @@ const HeroSection = () => (
           Discover and book the best wedding vendors across Rwanda. From venues to photographers, we bring your vision to life.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild variant="hero" size="lg" className="text-base px-8 py-6 rounded-full">
+          <Button asChild size="lg" className="text-base px-8 py-6 rounded-full bg-foreground text-background hover:bg-foreground/90">
             <Link to="/vendors">Find Vendors</Link>
           </Button>
           <Button asChild variant="hero-outline" size="lg" className="text-base px-8 py-6 rounded-full">
