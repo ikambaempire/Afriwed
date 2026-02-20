@@ -11,9 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle, DollarSign, ListChecks, CalendarHeart,
-  Plus, Trash2, ShoppingBag
+  Plus, Trash2, ShoppingBag, Pencil
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 interface ChecklistItem {
   id: string;
@@ -79,6 +80,12 @@ const Planning = () => {
     const saved = localStorage.getItem("haruwa-budget");
     return saved ? JSON.parse(saved) : defaultBudget;
   });
+  const [totalBudget, setTotalBudget] = useState<number>(() => {
+    const saved = localStorage.getItem("haruwa-total-budget");
+    return saved ? parseInt(saved) : 8500000;
+  });
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [tempBudget, setTempBudget] = useState("");
   const [newItem, setNewItem] = useState("");
   const [newBudgetName, setNewBudgetName] = useState("");
   const [newBudgetAmount, setNewBudgetAmount] = useState("");
@@ -91,6 +98,11 @@ const Planning = () => {
   const saveBudget = (items: BudgetItem[]) => {
     setBudget(items);
     localStorage.setItem("haruwa-budget", JSON.stringify(items));
+  };
+
+  const saveTotalBudget = (amount: number) => {
+    setTotalBudget(amount);
+    localStorage.setItem("haruwa-total-budget", String(amount));
   };
 
   const toggleItem = (id: string) => {
@@ -128,7 +140,7 @@ const Planning = () => {
   const completionPercent = checklist.length > 0 ? Math.round((completedCount / checklist.length) * 100) : 0;
   const totalEstimated = budget.reduce((s, b) => s + b.estimated, 0);
   const totalActual = budget.reduce((s, b) => s + b.actual, 0);
-  const budgetPercent = totalEstimated > 0 ? Math.round((totalActual / totalEstimated) * 100) : 0;
+  const budgetPercent = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
 
   const categories = [...new Set(checklist.map(i => i.category))];
 
@@ -174,9 +186,37 @@ const Planning = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <ShoppingBag className="w-8 h-8 text-accent" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Budget</p>
-                    <p className="text-xl font-bold text-foreground">{totalEstimated.toLocaleString()} RWF</p>
+                  <div className="flex items-center gap-1">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Budget</p>
+                      {editingBudget ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            value={tempBudget}
+                            onChange={e => setTempBudget(e.target.value)}
+                            className="h-7 w-28 text-sm"
+                            onKeyDown={e => {
+                              if (e.key === "Enter") {
+                                saveTotalBudget(parseInt(tempBudget) || totalBudget);
+                                setEditingBudget(false);
+                                toast({ title: "Budget updated!" });
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => {
+                            saveTotalBudget(parseInt(tempBudget) || totalBudget);
+                            setEditingBudget(false);
+                            toast({ title: "Budget updated!" });
+                          }}>✓</Button>
+                        </div>
+                      ) : (
+                        <p className="text-xl font-bold text-foreground cursor-pointer" onClick={() => { setTempBudget(String(totalBudget)); setEditingBudget(true); }}>
+                          {totalBudget.toLocaleString()} RWF <Pencil className="w-3 h-3 inline text-muted-foreground" />
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -187,7 +227,7 @@ const Planning = () => {
                   <CalendarHeart className="w-8 h-8 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">Remaining</p>
-                    <p className="text-xl font-bold text-foreground">{(totalEstimated - totalActual).toLocaleString()} RWF</p>
+                    <p className="text-xl font-bold text-foreground">{(totalBudget - totalActual).toLocaleString()} RWF</p>
                   </div>
                 </div>
               </CardContent>
@@ -211,17 +251,10 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Add item */}
                   <div className="flex gap-2">
-                    <Input
-                      value={newItem}
-                      onChange={e => setNewItem(e.target.value)}
-                      placeholder="Add a new item..."
-                      onKeyDown={e => e.key === "Enter" && addChecklistItem()}
-                    />
+                    <Input value={newItem} onChange={e => setNewItem(e.target.value)} placeholder="Add a new item..." onKeyDown={e => e.key === "Enter" && addChecklistItem()} />
                     <Button onClick={addChecklistItem} size="icon"><Plus className="w-4 h-4" /></Button>
                   </div>
-
                   {categories.map(cat => {
                     const items = checklist.filter(i => i.category === cat);
                     const catDone = items.filter(i => i.done).length;
@@ -234,19 +267,9 @@ const Planning = () => {
                         <div className="space-y-2">
                           {items.map(item => (
                             <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg group">
-                              <Checkbox
-                                checked={item.done}
-                                onCheckedChange={() => toggleItem(item.id)}
-                              />
-                              <span className={`flex-1 text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                                {item.label}
-                              </span>
-                              <button
-                                onClick={() => removeChecklistItem(item.id)}
-                                className="opacity-0 group-hover:opacity-100 text-destructive transition-opacity"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <Checkbox checked={item.done} onCheckedChange={() => toggleItem(item.id)} />
+                              <span className={`flex-1 text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.label}</span>
+                              <button onClick={() => removeChecklistItem(item.id)} className="opacity-0 group-hover:opacity-100 text-destructive transition-opacity"><Trash2 className="w-4 h-4" /></button>
                             </div>
                           ))}
                         </div>
@@ -267,37 +290,21 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Add budget item */}
                   <div className="flex gap-2">
-                    <Input
-                      value={newBudgetName}
-                      onChange={e => setNewBudgetName(e.target.value)}
-                      placeholder="Item name..."
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      value={newBudgetAmount}
-                      onChange={e => setNewBudgetAmount(e.target.value)}
-                      placeholder="Estimated RWF"
-                      className="w-40"
-                    />
+                    <Input value={newBudgetName} onChange={e => setNewBudgetName(e.target.value)} placeholder="Item name..." className="flex-1" />
+                    <Input type="number" value={newBudgetAmount} onChange={e => setNewBudgetAmount(e.target.value)} placeholder="Estimated RWF" className="w-40" />
                     <Button onClick={addBudgetItem} size="icon"><Plus className="w-4 h-4" /></Button>
                   </div>
-
-                  {/* Summary bar */}
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Spent: {totalActual.toLocaleString()} RWF</span>
-                      <span className="text-foreground font-semibold">Budget: {totalEstimated.toLocaleString()} RWF</span>
+                      <span className="text-foreground font-semibold">Budget: {totalBudget.toLocaleString()} RWF</span>
                     </div>
                     <Progress value={budgetPercent} className="h-3" />
-                    {totalActual > totalEstimated && (
-                      <p className="text-destructive text-xs mt-2 font-medium">⚠️ Over budget by {(totalActual - totalEstimated).toLocaleString()} RWF</p>
+                    {totalActual > totalBudget && (
+                      <p className="text-destructive text-xs mt-2 font-medium">⚠️ Over budget by {(totalActual - totalBudget).toLocaleString()} RWF</p>
                     )}
                   </div>
-
-                  {/* Budget items */}
                   <div className="space-y-3">
                     {budget.map(b => {
                       const pct = b.estimated > 0 ? Math.round((b.actual / b.estimated) * 100) : 0;
@@ -307,19 +314,11 @@ const Planning = () => {
                             <span className="font-medium text-foreground text-sm">{b.name}</span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">Est: {b.estimated.toLocaleString()}</span>
-                              <button onClick={() => removeBudgetItem(b.id)} className="opacity-0 group-hover:opacity-100 text-destructive transition-opacity">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <button onClick={() => removeBudgetItem(b.id)} className="opacity-0 group-hover:opacity-100 text-destructive transition-opacity"><Trash2 className="w-4 h-4" /></button>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <Input
-                              type="number"
-                              value={b.actual || ""}
-                              onChange={e => updateBudgetActual(b.id, parseInt(e.target.value) || 0)}
-                              placeholder="Actual spent"
-                              className="w-40 h-8 text-sm"
-                            />
+                            <Input type="number" value={b.actual || ""} onChange={e => updateBudgetActual(b.id, parseInt(e.target.value) || 0)} placeholder="Actual spent" className="w-40 h-8 text-sm" />
                             <Progress value={Math.min(pct, 100)} className="flex-1 h-2" />
                             <span className={`text-xs font-medium ${pct > 100 ? "text-destructive" : "text-muted-foreground"}`}>{pct}%</span>
                           </div>
@@ -334,35 +333,20 @@ const Planning = () => {
             {/* Vendors Tab */}
             <TabsContent value="vendors">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Find & Book Vendors</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Find & Book Vendors</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-sm mb-6">
-                    Browse our marketplace to find the perfect vendors for each part of your wedding.
-                  </p>
+                  <p className="text-muted-foreground text-sm mb-6">Browse our marketplace to find the perfect vendors for each part of your wedding.</p>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[
-                      { name: "Venues", emoji: "🏛️" },
-                      { name: "Photographers", emoji: "📸" },
-                      { name: "Catering", emoji: "🍽️" },
-                      { name: "Decorators", emoji: "🎨" },
-                      { name: "Makeup Artists", emoji: "💄" },
-                      { name: "MC & Entertainment", emoji: "🎤" },
-                      { name: "Car Hire", emoji: "🚗" },
-                      { name: "Sound & Lighting", emoji: "🔊" },
+                      { name: "Venues", emoji: "🏛️" }, { name: "Photographers", emoji: "📸" },
+                      { name: "Catering", emoji: "🍽️" }, { name: "Decorators", emoji: "🎨" },
+                      { name: "Makeup Artists", emoji: "💄" }, { name: "MC & Entertainment", emoji: "🎤" },
+                      { name: "Car Hire", emoji: "🚗" }, { name: "Sound & Lighting", emoji: "🔊" },
                       { name: "Wedding Planners", emoji: "📋" },
                     ].map(cat => (
-                      <Link
-                        key={cat.name}
-                        to={`/vendors?category=${cat.name}`}
-                        className="flex items-center gap-3 p-4 bg-muted rounded-lg hover:bg-accent/10 transition-colors"
-                      >
+                      <Link key={cat.name} to={`/vendors?category=${cat.name}`} className="flex items-center gap-3 p-4 bg-muted rounded-lg hover:bg-accent/10 transition-colors">
                         <span className="text-2xl">{cat.emoji}</span>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">{cat.name}</p>
-                          <p className="text-xs text-muted-foreground">Browse →</p>
-                        </div>
+                        <div><p className="font-medium text-foreground text-sm">{cat.name}</p><p className="text-xs text-muted-foreground">Browse →</p></div>
                       </Link>
                     ))}
                   </div>

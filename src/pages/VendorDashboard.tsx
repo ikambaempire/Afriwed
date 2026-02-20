@@ -14,8 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import {
   Upload, Image as ImageIcon, Video, DollarSign, Calendar,
-  CheckCircle, XCircle, Clock, TrendingUp, Eye, Package
+  CheckCircle, XCircle, Clock, TrendingUp, Eye, Package, Pencil, Trash2
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 
 const VendorDashboard = () => {
   const { user, loading, isVendor, vendorId } = useAuth();
@@ -28,8 +31,9 @@ const VendorDashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // New service form
   const [newService, setNewService] = useState({ name: "", description: "", price: "", duration: "" });
+  const [editingService, setEditingService] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ name: "", description: "", price: "", duration: "" });
 
   useEffect(() => {
     if (vendorId) fetchAll();
@@ -54,21 +58,13 @@ const VendorDashboard = () => {
     const files = e.target.files;
     if (!files || !user) return;
     setUploading(true);
-
     for (const file of Array.from(files)) {
       const ext = file.name.split(".").pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("vendor-media").upload(path, file);
-      if (uploadError) {
-        toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-        continue;
-      }
+      if (uploadError) { toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" }); continue; }
       const { data: publicUrl } = supabase.storage.from("vendor-media").getPublicUrl(path);
-      await supabase.from("vendor_media").insert({
-        vendor_id: vendorId,
-        url: publicUrl.publicUrl,
-        media_type: mediaType,
-      });
+      await supabase.from("vendor_media").insert({ vendor_id: vendorId, url: publicUrl.publicUrl, media_type: mediaType });
     }
     setUploading(false);
     toast({ title: `${mediaType === "image" ? "Images" : "Videos"} uploaded!` });
@@ -78,14 +74,28 @@ const VendorDashboard = () => {
   const addService = async () => {
     if (!newService.name || !newService.price) return;
     await supabase.from("vendor_services").insert({
-      vendor_id: vendorId,
-      name: newService.name,
-      description: newService.description,
-      price: parseInt(newService.price),
-      duration: newService.duration,
+      vendor_id: vendorId, name: newService.name, description: newService.description,
+      price: parseInt(newService.price), duration: newService.duration,
     });
     setNewService({ name: "", description: "", price: "", duration: "" });
     toast({ title: "Service added!" });
+    fetchAll();
+  };
+
+  const updateService = async () => {
+    if (!editingService || !editForm.name || !editForm.price) return;
+    await supabase.from("vendor_services").update({
+      name: editForm.name, description: editForm.description,
+      price: parseInt(editForm.price), duration: editForm.duration,
+    }).eq("id", editingService.id);
+    setEditingService(null);
+    toast({ title: "Service updated!" });
+    fetchAll();
+  };
+
+  const deleteService = async (id: string) => {
+    await supabase.from("vendor_services").delete().eq("id", id);
+    toast({ title: "Service deleted" });
     fetchAll();
   };
 
@@ -130,7 +140,7 @@ const VendorDashboard = () => {
             </div>
           </div>
 
-          {/* Stats cards */}
+          {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Earnings</p><p className="text-xl font-bold text-foreground">{totalEarnings.toLocaleString()} RWF</p></div></div></CardContent></Card>
             <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Clock className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Pending Bookings</p><p className="text-xl font-bold text-foreground">{pendingBookings}</p></div></div></CardContent></Card>
@@ -147,10 +157,7 @@ const VendorDashboard = () => {
               <TabsTrigger value="earnings">Earnings</TabsTrigger>
             </TabsList>
 
-            {/* Calendar Tab */}
-            <TabsContent value="calendar">
-              <BookingCalendar bookings={bookings} />
-            </TabsContent>
+            <TabsContent value="calendar"><BookingCalendar bookings={bookings} /></TabsContent>
 
             {/* Media Tab */}
             <TabsContent value="media">
@@ -163,12 +170,8 @@ const VendorDashboard = () => {
                   <div className="flex gap-3 flex-wrap">
                     <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={e => handleFileUpload(e, "image")} />
                     <input ref={videoInputRef} type="file" accept="video/*" multiple hidden onChange={e => handleFileUpload(e, "video")} />
-                    <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} variant="outline">
-                      <ImageIcon className="w-4 h-4 mr-2" />Upload Images
-                    </Button>
-                    <Button onClick={() => videoInputRef.current?.click()} disabled={uploading} variant="outline">
-                      <Video className="w-4 h-4 mr-2" />Upload Videos
-                    </Button>
+                    <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} variant="outline"><ImageIcon className="w-4 h-4 mr-2" />Upload Images</Button>
+                    <Button onClick={() => videoInputRef.current?.click()} disabled={uploading} variant="outline"><Video className="w-4 h-4 mr-2" />Upload Videos</Button>
                   </div>
                   {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -193,12 +196,10 @@ const VendorDashboard = () => {
               </Card>
             </TabsContent>
 
-            {/* Services Tab */}
+            {/* Services Tab with Edit/Delete */}
             <TabsContent value="services">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Your Services & Packages</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Your Services & Packages</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -219,6 +220,7 @@ const VendorDashboard = () => {
                     </div>
                   </div>
                   <Button onClick={addService}>Add Service</Button>
+
                   <div className="space-y-3 mt-4">
                     {services.map(s => (
                       <div key={s.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -227,20 +229,53 @@ const VendorDashboard = () => {
                           <p className="text-sm text-muted-foreground">{s.description}</p>
                           {s.duration && <p className="text-xs text-muted-foreground">{s.duration}</p>}
                         </div>
-                        <p className="font-semibold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                          <Button size="icon" variant="ghost" onClick={() => {
+                            setEditingService(s);
+                            setEditForm({ name: s.name, description: s.description || "", price: String(s.price), duration: s.duration || "" });
+                          }}><Pencil className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteService(s.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Edit Service Dialog */}
+              <Dialog open={!!editingService} onOpenChange={(open) => !open && setEditingService(null)}>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Edit Service</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input value={editForm.name} onChange={e => setEditForm(f => ({...f, name: e.target.value}))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Price (RWF)</Label>
+                      <Input type="number" value={editForm.price} onChange={e => setEditForm(f => ({...f, price: e.target.value}))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Duration</Label>
+                      <Input value={editForm.duration} onChange={e => setEditForm(f => ({...f, duration: e.target.value}))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea value={editForm.description} onChange={e => setEditForm(f => ({...f, description: e.target.value}))} rows={3} />
+                    </div>
+                    <Button onClick={updateService} className="w-full">Save Changes</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Bookings Tab */}
             <TabsContent value="bookings">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Booking Requests</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Booking Requests</CardTitle></CardHeader>
                 <CardContent>
                   {bookings.length === 0 ? (
                     <p className="text-center py-8 text-muted-foreground">No bookings yet</p>
@@ -250,9 +285,7 @@ const VendorDashboard = () => {
                         <div key={b.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-muted rounded-lg">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <Badge variant={b.status === "confirmed" ? "default" : b.status === "pending" ? "secondary" : "destructive"}>
-                                {b.status}
-                              </Badge>
+                              <Badge variant={b.status === "confirmed" ? "default" : b.status === "pending" ? "secondary" : "destructive"}>{b.status}</Badge>
                               <span className="text-sm text-muted-foreground">{new Date(b.event_date).toLocaleDateString()}</span>
                             </div>
                             <p className="text-sm text-foreground">{(b.total_amount || 0).toLocaleString()} RWF</p>
@@ -260,12 +293,8 @@ const VendorDashboard = () => {
                           </div>
                           {b.status === "pending" && (
                             <div className="flex gap-2">
-                              <Button size="sm" onClick={() => updateBookingStatus(b.id, "confirmed")}>
-                                <CheckCircle className="w-3 h-3 mr-1" />Accept
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => updateBookingStatus(b.id, "rejected")}>
-                                <XCircle className="w-3 h-3 mr-1" />Reject
-                              </Button>
+                              <Button size="sm" onClick={() => updateBookingStatus(b.id, "confirmed")}><CheckCircle className="w-3 h-3 mr-1" />Accept</Button>
+                              <Button size="sm" variant="outline" onClick={() => updateBookingStatus(b.id, "rejected")}><XCircle className="w-3 h-3 mr-1" />Reject</Button>
                             </div>
                           )}
                         </div>
@@ -279,9 +308,7 @@ const VendorDashboard = () => {
             {/* Earnings Tab */}
             <TabsContent value="earnings">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Earnings & Transactions</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Earnings & Transactions</CardTitle></CardHeader>
                 <CardContent>
                   {transactions.length === 0 ? (
                     <p className="text-center py-8 text-muted-foreground">No transactions yet</p>

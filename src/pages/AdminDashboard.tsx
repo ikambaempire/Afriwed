@@ -1,17 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import {
   Users, Store, DollarSign, TrendingUp, CheckCircle, XCircle,
-  ShieldCheck, Star, Eye, AlertTriangle
+  ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AdminDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -19,22 +23,34 @@ const AdminDashboard = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [ads, setAds] = useState<any[]>([]);
+
+  // New ad form
+  const [adTitle, setAdTitle] = useState("");
+  const [adDescription, setAdDescription] = useState("");
+  const [adVendorId, setAdVendorId] = useState("");
+  const [adMediaUrl, setAdMediaUrl] = useState("");
+  const [adMediaType, setAdMediaType] = useState("image");
+  const [uploading, setUploading] = useState(false);
+  const adFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isAdmin) fetchAll();
   }, [isAdmin]);
 
   const fetchAll = async () => {
-    const [vRes, tRes, bRes, pRes] = await Promise.all([
+    const [vRes, tRes, bRes, pRes, aRes] = await Promise.all([
       supabase.from("vendors").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }),
       supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
     ]);
     setVendors(vRes.data ?? []);
     setTransactions(tRes.data ?? []);
     setBookings(bRes.data ?? []);
     setProfiles(pRes.data ?? []);
+    setAds(aRes.data ?? []);
   };
 
   const approveVendor = async (id: string, approved: boolean) => {
@@ -55,6 +71,54 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
+  const handleAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `ads/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: publicUrl } = supabase.storage.from("vendor-media").getPublicUrl(path);
+    setAdMediaUrl(publicUrl.publicUrl);
+    setAdMediaType(file.type.startsWith("video") ? "video" : "image");
+    setUploading(false);
+  };
+
+  const publishAd = async () => {
+    if (!adTitle || !adMediaUrl) {
+      toast({ title: "Title and media are required", variant: "destructive" });
+      return;
+    }
+    await supabase.from("advertisements").insert({
+      title: adTitle,
+      description: adDescription,
+      media_url: adMediaUrl,
+      media_type: adMediaType,
+      vendor_id: adVendorId || null,
+      is_active: true,
+    });
+    setAdTitle(""); setAdDescription(""); setAdMediaUrl(""); setAdVendorId("");
+    toast({ title: "Advertisement published!" });
+    fetchAll();
+  };
+
+  const toggleAdActive = async (id: string, active: boolean) => {
+    await supabase.from("advertisements").update({ is_active: active }).eq("id", id);
+    toast({ title: active ? "Ad activated" : "Ad deactivated" });
+    fetchAll();
+  };
+
+  const deleteAd = async (id: string) => {
+    await supabase.from("advertisements").delete().eq("id", id);
+    toast({ title: "Ad deleted" });
+    fetchAll();
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/auth" />;
   if (!isAdmin) return (
@@ -67,7 +131,6 @@ const AdminDashboard = () => {
   );
 
   const totalRevenue = transactions.reduce((s, t) => s + (t.commission || 0), 0);
-  const completedTransactions = transactions.filter(t => t.status === "completed").length;
   const pendingVendors = vendors.filter(v => !v.is_approved).length;
 
   return (
@@ -91,6 +154,7 @@ const AdminDashboard = () => {
           <Tabs defaultValue="vendors" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
+              <TabsTrigger value="ads">Advertisements</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -133,6 +197,98 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                     {vendors.length === 0 && <p className="text-center py-8 text-muted-foreground">No vendors yet</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Advertisements Tab */}
+            <TabsContent value="ads">
+              <Card>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Megaphone className="w-5 h-5 text-primary" />Publish Advertisement</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Ad Title</Label>
+                      <Input value={adTitle} onChange={e => setAdTitle(e.target.value)} placeholder="e.g. Featured Photographer" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Link to Vendor (optional)</Label>
+                      <Select value={adVendorId} onValueChange={setAdVendorId}>
+                        <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                        <SelectContent>
+                          {vendors.map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.business_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea value={adDescription} onChange={e => setAdDescription(e.target.value)} placeholder="Short ad description..." rows={2} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Media (Image or Video)</Label>
+                    <input ref={adFileRef} type="file" accept="image/*,video/*" hidden onChange={handleAdUpload} />
+                    <div className="flex gap-3 items-center">
+                      <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading}>
+                        <ImageIcon className="w-4 h-4 mr-2" />{uploading ? "Uploading..." : "Upload Media"}
+                      </Button>
+                      {adMediaUrl && (
+                        <Badge variant="secondary">✓ Media ready</Badge>
+                      )}
+                    </div>
+                    {adMediaUrl && (
+                      <div className="mt-2 rounded-lg overflow-hidden max-w-xs">
+                        {adMediaType === "video" ? (
+                          <video src={adMediaUrl} className="w-full h-32 object-cover" controls />
+                        ) : (
+                          <img src={adMediaUrl} alt="Preview" className="w-full h-32 object-cover" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={publishAd} disabled={!adTitle || !adMediaUrl}>
+                    <Megaphone className="w-4 h-4 mr-2" />Publish Ad
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Existing ads */}
+              <Card className="mt-6">
+                <CardHeader><CardTitle className="text-lg">Active Advertisements ({ads.length})</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {ads.map(ad => (
+                      <div key={ad.id} className="flex items-center justify-between gap-4 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-16 h-12 rounded overflow-hidden flex-shrink-0">
+                            {ad.media_type === "video" ? (
+                              <video src={ad.media_url} className="w-full h-full object-cover" />
+                            ) : (
+                              <img src={ad.media_url} alt="" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground text-sm">{ad.title}</p>
+                            <p className="text-xs text-muted-foreground">{ad.description}</p>
+                            <Badge variant={ad.is_active ? "default" : "secondary"} className="text-xs mt-1">
+                              {ad.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => toggleAdActive(ad.id, !ad.is_active)}>
+                            {ad.is_active ? "Deactivate" : "Activate"}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteAd(ad.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {ads.length === 0 && <p className="text-center py-8 text-muted-foreground">No advertisements yet</p>}
                   </div>
                 </CardContent>
               </Card>
