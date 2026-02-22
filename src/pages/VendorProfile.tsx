@@ -50,23 +50,33 @@ const VendorProfile = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [bookingNotes, setBookingNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
+  const [checkingDate, setCheckingDate] = useState(false);
+  const [dateUnavailable, setDateUnavailable] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     const fetchVendor = async () => {
-      const [vRes, sRes, mRes] = await Promise.all([
+      const [vRes, sRes, mRes, bRes] = await Promise.all([
         supabase.from("vendors").select("*").eq("id", id).maybeSingle(),
         supabase.from("vendor_services").select("*").eq("vendor_id", id).order("price"),
         supabase.from("vendor_media").select("*").eq("vendor_id", id).order("created_at", { ascending: false }),
+        supabase.from("bookings").select("event_date").eq("vendor_id", id).in("status", ["pending", "confirmed"]),
       ]);
       setVendor(vRes.data);
       setServices(sRes.data ?? []);
       setMedia(mRes.data ?? []);
+      setBookedDates((bRes.data ?? []).map(b => b.event_date));
       setLoading(false);
       if (sRes.data?.length) setSelectedService(sRes.data[0]);
     };
     fetchVendor();
   }, [id]);
+
+  useEffect(() => {
+    if (!bookingDate) { setDateUnavailable(false); return; }
+    setDateUnavailable(bookedDates.includes(bookingDate));
+  }, [bookingDate, bookedDates]);
 
   const handleBooking = async () => {
     if (!user) {
@@ -76,6 +86,10 @@ const VendorProfile = () => {
     }
     if (!bookingDate) {
       toast({ title: "Select a date", variant: "destructive" });
+      return;
+    }
+    if (dateUnavailable) {
+      toast({ title: "Date unavailable", description: "This vendor is already booked on that date. Please choose another date.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -222,6 +236,9 @@ const VendorProfile = () => {
                       <div className="space-y-2">
                         <Label>Event Date</Label>
                         <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                        {dateUnavailable && (
+                          <p className="text-sm text-destructive font-medium">⚠️ This vendor is already booked on this date. Please choose another date.</p>
+                        )}
                       </div>
                       {services.length > 0 && (
                         <div className="space-y-2">
@@ -249,8 +266,8 @@ const VendorProfile = () => {
                         <Label>Notes (optional)</Label>
                         <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requests..." rows={3} />
                       </div>
-                      <Button onClick={handleBooking} className="w-full" disabled={submitting}>
-                        {submitting ? "Submitting..." : `Request Booking${selectedService ? ` – ${(selectedService.price || 0).toLocaleString()} RWF` : ""}`}
+                      <Button onClick={handleBooking} className="w-full" disabled={submitting || dateUnavailable}>
+                        {submitting ? "Submitting..." : dateUnavailable ? "Date Unavailable" : `Request Booking${selectedService ? ` – ${(selectedService.price || 0).toLocaleString()} RWF` : ""}`}
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">You won't be charged yet. The vendor will confirm first.</p>
                     </div>
@@ -348,6 +365,9 @@ const VendorProfile = () => {
                   <h4 className="text-sm font-medium text-foreground mb-3">Quick Booking</h4>
                   <div className="space-y-3">
                     <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                    {dateUnavailable && (
+                      <p className="text-sm text-destructive font-medium">⚠️ Already booked on this date</p>
+                    )}
                     {services.length > 0 && (
                       <select
                         className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
@@ -359,8 +379,8 @@ const VendorProfile = () => {
                         ))}
                       </select>
                     )}
-                    <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting}>
-                      {submitting ? "Submitting..." : "Request Booking"}
+                    <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting || dateUnavailable}>
+                      {submitting ? "Submitting..." : dateUnavailable ? "Date Unavailable" : "Request Booking"}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center mt-3">You won't be charged yet</p>
