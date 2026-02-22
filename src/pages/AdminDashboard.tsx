@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import {
   Users, Store, DollarSign, TrendingUp, CheckCircle, XCircle,
-  ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon
+  ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon,
+  Wallet, ArrowDownRight, ArrowUpRight
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -24,6 +25,7 @@ const AdminDashboard = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [ads, setAds] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
 
   // New ad form
   const [adTitle, setAdTitle] = useState("");
@@ -39,18 +41,20 @@ const AdminDashboard = () => {
   }, [isAdmin]);
 
   const fetchAll = async () => {
-    const [vRes, tRes, bRes, pRes, aRes] = await Promise.all([
+    const [vRes, tRes, bRes, pRes, aRes, wRes] = await Promise.all([
       supabase.from("vendors").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }),
       supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
+      supabase.from("withdrawal_requests").select("*").order("created_at", { ascending: false }),
     ]);
     setVendors(vRes.data ?? []);
     setTransactions(tRes.data ?? []);
     setBookings(bRes.data ?? []);
     setProfiles(pRes.data ?? []);
     setAds(aRes.data ?? []);
+    setWithdrawals(wRes.data ?? []);
   };
 
   const approveVendor = async (id: string, approved: boolean) => {
@@ -95,12 +99,8 @@ const AdminDashboard = () => {
       return;
     }
     await supabase.from("advertisements").insert({
-      title: adTitle,
-      description: adDescription,
-      media_url: adMediaUrl,
-      media_type: adMediaType,
-      vendor_id: adVendorId || null,
-      is_active: true,
+      title: adTitle, description: adDescription, media_url: adMediaUrl,
+      media_type: adMediaType, vendor_id: adVendorId || null, is_active: true,
     });
     setAdTitle(""); setAdDescription(""); setAdMediaUrl(""); setAdVendorId("");
     toast({ title: "Advertisement published!" });
@@ -119,6 +119,16 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
+  const processWithdrawal = async (id: string, status: "completed" | "rejected", notes?: string) => {
+    await supabase.from("withdrawal_requests").update({
+      status,
+      admin_notes: notes || null,
+      processed_at: new Date().toISOString(),
+    }).eq("id", id);
+    toast({ title: status === "completed" ? "Withdrawal processed" : "Withdrawal rejected" });
+    fetchAll();
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/auth" />;
   if (!isAdmin) return (
@@ -131,7 +141,11 @@ const AdminDashboard = () => {
   );
 
   const totalRevenue = transactions.reduce((s, t) => s + (t.commission || 0), 0);
+  const totalDeposits = transactions.filter(t => t.status === "completed").reduce((s, t) => s + (t.amount || 0), 0);
+  const totalPaidOut = withdrawals.filter(w => w.status === "completed").reduce((s, w) => s + (w.net_amount || 0), 0);
+  const walletBalance = totalDeposits - totalPaidOut;
   const pendingVendors = vendors.filter(v => !v.is_approved).length;
+  const pendingWithdrawals = withdrawals.filter(w => w.status === "pending");
 
   return (
     <>
@@ -140,25 +154,130 @@ const AdminDashboard = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground text-sm mt-1">Platform overview and management</p>
+            <p className="text-muted-foreground text-sm mt-1">Platform overview, payments & management</p>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Platform Revenue</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Wallet className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Admin Wallet</p><p className="text-xl font-bold text-foreground">{walletBalance.toLocaleString()} RWF</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Commission Earned</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
             <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Store className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Total Vendors</p><p className="text-xl font-bold text-foreground">{vendors.length}</p></div></div></CardContent></Card>
             <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Users</p><p className="text-xl font-bold text-foreground">{profiles.length}</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="text-xl font-bold text-foreground">{pendingVendors}</p></div></div></CardContent></Card>
+            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-foreground">{pendingVendors + pendingWithdrawals.length}</p></div></div></CardContent></Card>
           </div>
 
-          <Tabs defaultValue="vendors" className="space-y-6">
+          <Tabs defaultValue="wallet" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
+              <TabsTrigger value="wallet">Wallet & Withdrawals</TabsTrigger>
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="ads">Advertisements</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
+
+            {/* Wallet & Withdrawals Tab */}
+            <TabsContent value="wallet">
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" />Platform Wallet</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Deposits Received</span>
+                        <span className="font-medium text-foreground">{totalDeposits.toLocaleString()} RWF</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Paid to Vendors</span>
+                        <span className="font-medium text-foreground">{totalPaidOut.toLocaleString()} RWF</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Commission Earned</span>
+                        <span className="font-medium text-primary">{totalRevenue.toLocaleString()} RWF</span>
+                      </div>
+                      <div className="border-t border-border pt-2 flex justify-between text-sm font-bold">
+                        <span className="text-foreground">Current Balance</span>
+                        <span className="text-primary">{walletBalance.toLocaleString()} RWF</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">All client payments flow into the admin wallet. When vendors request withdrawals, you deduct 10% commission and send the rest to their account.</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <ArrowUpRight className="w-5 h-5 text-accent" />
+                      Pending Withdrawals ({pendingWithdrawals.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {pendingWithdrawals.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">No pending withdrawals</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {pendingWithdrawals.map(w => {
+                          const vendor = vendors.find(v => v.id === w.vendor_id);
+                          return (
+                            <div key={w.id} className="p-4 bg-muted rounded-lg space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">{vendor?.business_name || "Unknown Vendor"}</p>
+                                  <p className="text-xs text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-bold text-foreground">{(w.amount || 0).toLocaleString()} RWF</p>
+                                  <p className="text-xs text-primary">Commission: {(w.commission || 0).toLocaleString()} RWF</p>
+                                  <p className="text-xs font-medium text-foreground">Send: {(w.net_amount || 0).toLocaleString()} RWF</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" className="flex-1" onClick={() => processWithdrawal(w.id, "completed")}>
+                                  <CheckCircle className="w-3 h-3 mr-1" />Mark as Sent
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => processWithdrawal(w.id, "rejected", "Insufficient details")}>
+                                  <XCircle className="w-3 h-3 mr-1" />Reject
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* All Withdrawals History */}
+              {withdrawals.filter(w => w.status !== "pending").length > 0 && (
+                <Card className="mt-6">
+                  <CardHeader><CardTitle className="text-lg">Withdrawal History</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {withdrawals.filter(w => w.status !== "pending").map(w => {
+                        const vendor = vendors.find(v => v.id === w.vendor_id);
+                        return (
+                          <div key={w.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={w.status === "completed" ? "default" : "destructive"} className="text-xs">{w.status}</Badge>
+                                <span className="text-sm font-medium text-foreground">{vendor?.business_name || "Unknown"}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{w.processed_at ? new Date(w.processed_at).toLocaleDateString() : new Date(w.created_at).toLocaleDateString()}</p>
+                              {w.admin_notes && <p className="text-xs text-muted-foreground">{w.admin_notes}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-foreground">{(w.net_amount || 0).toLocaleString()} RWF</p>
+                              <p className="text-xs text-muted-foreground">Fee: {(w.commission || 0).toLocaleString()} RWF</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
             {/* Vendors Tab */}
             <TabsContent value="vendors">
@@ -235,9 +354,7 @@ const AdminDashboard = () => {
                       <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading}>
                         <ImageIcon className="w-4 h-4 mr-2" />{uploading ? "Uploading..." : "Upload Media"}
                       </Button>
-                      {adMediaUrl && (
-                        <Badge variant="secondary">✓ Media ready</Badge>
-                      )}
+                      {adMediaUrl && <Badge variant="secondary">✓ Media ready</Badge>}
                     </div>
                     {adMediaUrl && (
                       <div className="mt-2 rounded-lg overflow-hidden max-w-xs">
@@ -255,7 +372,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Existing ads */}
               <Card className="mt-6">
                 <CardHeader><CardTitle className="text-lg">Active Advertisements ({ads.length})</CardTitle></CardHeader>
                 <CardContent>
@@ -327,10 +443,18 @@ const AdminDashboard = () => {
                     {bookings.map(b => (
                       <div key={b.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <Badge variant={b.status === "confirmed" ? "default" : b.status === "pending" ? "secondary" : "destructive"}>{b.status}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={b.status === "confirmed" ? "default" : b.status === "pending" ? "secondary" : "destructive"}>{b.status}</Badge>
+                            <Badge variant={b.payment_status === "paid" ? "default" : "outline"} className="text-xs">
+                              {b.payment_status === "paid" ? "💰 Paid" : "Unpaid"}
+                            </Badge>
+                          </div>
                           <p className="text-xs text-muted-foreground mt-1">Event: {new Date(b.event_date).toLocaleDateString()}</p>
                         </div>
-                        <p className="font-semibold text-foreground">{(b.total_amount || 0).toLocaleString()} RWF</p>
+                        <div className="text-right">
+                          <p className="font-semibold text-foreground">{(b.total_amount || 0).toLocaleString()} RWF</p>
+                          <p className="text-xs text-muted-foreground">Deposit: {(b.deposit_amount || 0).toLocaleString()} RWF</p>
+                        </div>
                       </div>
                     ))}
                     {bookings.length === 0 && <p className="text-center py-8 text-muted-foreground">No bookings yet</p>}

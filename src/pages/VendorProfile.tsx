@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
-import { Star, MapPin, MessageCircle, Calendar, Check, Clock, Users } from "lucide-react";
+import { Star, MapPin, MessageCircle, Calendar, Check, Clock, Users, CreditCard, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 
@@ -51,22 +51,28 @@ const VendorProfile = () => {
   const [bookingNotes, setBookingNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [bookedDates, setBookedDates] = useState<string[]>([]);
-  const [checkingDate, setCheckingDate] = useState(false);
   const [dateUnavailable, setDateUnavailable] = useState(false);
+
+  // Payment state
+  const [paymentStep, setPaymentStep] = useState<"booking" | "payment" | "confirmation">("booking");
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | "airtel" | "card">("momo");
+  const [paymentPhone, setPaymentPhone] = useState("");
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     const fetchVendor = async () => {
-      const [vRes, sRes, mRes, bRes] = await Promise.all([
+      const [vRes, sRes, mRes] = await Promise.all([
         supabase.from("vendors").select("*").eq("id", id).maybeSingle(),
         supabase.from("vendor_services").select("*").eq("vendor_id", id).order("price"),
         supabase.from("vendor_media").select("*").eq("vendor_id", id).order("created_at", { ascending: false }),
-        supabase.from("bookings").select("event_date").eq("vendor_id", id).in("status", ["pending", "confirmed"]),
       ]);
+      // Use security definer function for booked dates
+      const { data: dates } = await supabase.rpc("get_vendor_booked_dates", { _vendor_id: id });
       setVendor(vRes.data);
       setServices(sRes.data ?? []);
       setMedia(mRes.data ?? []);
-      setBookedDates((bRes.data ?? []).map(b => b.event_date));
+      setBookedDates((dates ?? []).map((d: any) => typeof d === "string" ? d : d));
       setLoading(false);
       if (sRes.data?.length) setSelectedService(sRes.data[0]);
     };
@@ -78,9 +84,12 @@ const VendorProfile = () => {
     setDateUnavailable(bookedDates.includes(bookingDate));
   }, [bookingDate, bookedDates]);
 
-  const handleBooking = async () => {
+  const totalAmount = selectedService?.price || 0;
+  const depositAmount = Math.round(totalAmount * 0.6);
+
+  const handlePayment = async () => {
     if (!user) {
-      toast({ title: "Please sign in", description: "You need to be logged in to book a vendor.", variant: "destructive" });
+      toast({ title: "Please sign in", description: "You need to be logged in to book.", variant: "destructive" });
       navigate("/auth");
       return;
     }
@@ -89,38 +98,62 @@ const VendorProfile = () => {
       return;
     }
     if (dateUnavailable) {
-      toast({ title: "Date unavailable", description: "This vendor is already booked on that date. Please choose another date.", variant: "destructive" });
+      toast({ title: "Date unavailable", variant: "destructive" });
       return;
     }
-    setSubmitting(true);
-    const { error } = await supabase.from("bookings").insert({
+    if (paymentMethod !== "card" && !paymentPhone) {
+      toast({ title: "Enter your phone number", variant: "destructive" });
+      return;
+    }
+
+    setProcessingPayment(true);
+
+    // 1. Create booking with payment_status = 'paid'
+    const { data: booking, error: bookingError } = await supabase.from("bookings").insert({
       vendor_id: id!,
       client_id: user.id,
       event_date: bookingDate,
-      total_amount: selectedService?.price || 0,
-      deposit_amount: Math.round((selectedService?.price || 0) * 0.3),
+      total_amount: totalAmount,
+      deposit_amount: depositAmount,
       notes: bookingNotes || `${selectedService?.name || "Service"} booking`,
       service_id: selectedService?.id || null,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast({ title: "Booking failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Booking requested!", description: "The vendor will review and confirm your booking." });
-      setBookingOpen(false);
-      setBookingDate("");
-      setBookingNotes("");
+      payment_status: "paid",
+    }).select().single();
+
+    if (bookingError) {
+      toast({ title: "Booking failed", description: bookingError.message, variant: "destructive" });
+      setProcessingPayment(false);
+      return;
     }
+
+    // 2. Create transaction record (money goes to admin wallet)
+    const commission = Math.round(depositAmount * 0.1); // 10% commission
+    await supabase.from("transactions").insert({
+      booking_id: booking.id,
+      vendor_id: id!,
+      client_id: user.id,
+      amount: depositAmount,
+      commission,
+      payment_method: paymentMethod === "airtel" ? "airtel" : paymentMethod === "card" ? "card" : "momo",
+      status: "completed",
+    });
+
+    setProcessingPayment(false);
+    setPaymentStep("confirmation");
+  };
+
+  const resetBooking = () => {
+    setBookingOpen(false);
+    setPaymentStep("booking");
+    setBookingDate("");
+    setBookingNotes("");
+    setPaymentPhone("");
   };
 
   const startChat = async () => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) { navigate("/auth"); return; }
     if (!vendor) return;
 
-    // Check for existing 1-on-1 conversation
     const { data: myConvos } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
@@ -145,20 +178,16 @@ const VendorProfile = () => {
       }
     }
 
-    // Create new conversation
     const { data: convo } = await supabase
       .from("conversations")
       .insert({ name: vendor.business_name, is_group: false, created_by: user.id })
       .select()
       .single();
-
     if (!convo) return;
-
     await supabase.from("conversation_participants").insert([
       { conversation_id: convo.id, user_id: user.id },
       { conversation_id: convo.id, user_id: vendor.user_id },
     ]);
-
     navigate("/messages");
   };
 
@@ -222,55 +251,178 @@ const VendorProfile = () => {
                 <Button variant="outline" className="rounded-full gap-2" onClick={startChat}>
                   <MessageCircle className="w-4 h-4" /> Chat Now
                 </Button>
-                <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+                <Dialog open={bookingOpen} onOpenChange={(open) => { if (!open) resetBooking(); else setBookingOpen(true); }}>
                   <DialogTrigger asChild>
                     <Button variant="hero" className="rounded-full gap-2">
                       <Calendar className="w-4 h-4" /> Book Now
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Book {vendor.business_name}</DialogTitle>
+                      <DialogTitle>
+                        {paymentStep === "booking" && `Book ${vendor.business_name}`}
+                        {paymentStep === "payment" && "Complete Payment"}
+                        {paymentStep === "confirmation" && "Booking Confirmed! 🎉"}
+                      </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Event Date</Label>
-                        <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
-                        {dateUnavailable && (
-                          <p className="text-sm text-destructive font-medium">⚠️ This vendor is already booked on this date. Please choose another date.</p>
-                        )}
-                      </div>
-                      {services.length > 0 && (
+
+                    {/* Step 1: Booking Details */}
+                    {paymentStep === "booking" && (
+                      <div className="space-y-4">
+                        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3">
+                          <p className="text-sm font-medium text-foreground">💰 60% Upfront Payment Required</p>
+                          <p className="text-xs text-muted-foreground mt-1">You must pay 60% of the total amount to confirm your booking. The remaining 40% is due on the event day.</p>
+                        </div>
                         <div className="space-y-2">
-                          <Label>Package</Label>
+                          <Label>Event Date</Label>
+                          <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                          {dateUnavailable && (
+                            <p className="text-sm text-destructive font-medium">⚠️ This vendor is already booked on this date.</p>
+                          )}
+                        </div>
+                        {services.length > 0 && (
                           <div className="space-y-2">
-                            {services.map(s => (
+                            <Label>Package</Label>
+                            <div className="space-y-2">
+                              {services.map(s => (
+                                <button
+                                  key={s.id}
+                                  onClick={() => setSelectedService(s)}
+                                  className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-colors ${
+                                    selectedService?.id === s.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"
+                                  }`}
+                                >
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">{s.name}</p>
+                                    {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
+                                  </div>
+                                  <p className="text-sm font-semibold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <Label>Notes (optional)</Label>
+                          <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requests..." rows={2} />
+                        </div>
+                        {selectedService && (
+                          <div className="bg-muted rounded-lg p-3 space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Total Amount</span>
+                              <span className="font-medium text-foreground">{totalAmount.toLocaleString()} RWF</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold">
+                              <span className="text-primary">Pay Now (60%)</span>
+                              <span className="text-primary">{depositAmount.toLocaleString()} RWF</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">Due on event day (40%)</span>
+                              <span className="text-muted-foreground">{(totalAmount - depositAmount).toLocaleString()} RWF</span>
+                            </div>
+                          </div>
+                        )}
+                        <Button onClick={() => setPaymentStep("payment")} className="w-full" disabled={!bookingDate || dateUnavailable || !selectedService}>
+                          Proceed to Payment
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Step 2: Payment */}
+                    {paymentStep === "payment" && (
+                      <div className="space-y-4">
+                        <div className="bg-muted rounded-lg p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Amount to Pay</p>
+                          <p className="text-2xl font-bold text-primary">{depositAmount.toLocaleString()} RWF</p>
+                          <p className="text-xs text-muted-foreground">60% deposit for {selectedService?.name}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Payment Method</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { id: "momo" as const, label: "MTN MoMo", icon: Smartphone, color: "bg-yellow-500" },
+                              { id: "airtel" as const, label: "Airtel Money", icon: Smartphone, color: "bg-red-500" },
+                              { id: "card" as const, label: "Card", icon: CreditCard, color: "bg-blue-500" },
+                            ].map(m => (
                               <button
-                                key={s.id}
-                                onClick={() => setSelectedService(s)}
-                                className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-colors ${
-                                  selectedService?.id === s.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"
+                                key={m.id}
+                                onClick={() => setPaymentMethod(m.id)}
+                                className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-xs font-medium transition-colors ${
+                                  paymentMethod === m.id ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-muted"
                                 }`}
                               >
-                                <div>
-                                  <p className="text-sm font-medium text-foreground">{s.name}</p>
-                                  {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
-                                </div>
-                                <p className="text-sm font-semibold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                                <m.icon className="w-5 h-5" />
+                                {m.label}
                               </button>
                             ))}
                           </div>
                         </div>
-                      )}
-                      <div className="space-y-2">
-                        <Label>Notes (optional)</Label>
-                        <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requests..." rows={3} />
+
+                        {paymentMethod !== "card" && (
+                          <div className="space-y-2">
+                            <Label>{paymentMethod === "momo" ? "MTN MoMo Number" : "Airtel Money Number"}</Label>
+                            <Input
+                              type="tel"
+                              value={paymentPhone}
+                              onChange={e => setPaymentPhone(e.target.value)}
+                              placeholder={paymentMethod === "momo" ? "078XXXXXXX" : "073XXXXXXX"}
+                            />
+                          </div>
+                        )}
+
+                        {paymentMethod === "card" && (
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label>Card Number</Label>
+                              <Input placeholder="4242 4242 4242 4242" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label>Expiry</Label>
+                                <Input placeholder="MM/YY" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>CVC</Label>
+                                <Input placeholder="123" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          <Button variant="outline" className="flex-1" onClick={() => setPaymentStep("booking")}>Back</Button>
+                          <Button className="flex-1" onClick={handlePayment} disabled={processingPayment}>
+                            {processingPayment ? "Processing..." : `Pay ${depositAmount.toLocaleString()} RWF`}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">
+                          All payments are securely processed. Funds are held by the platform until event completion.
+                        </p>
                       </div>
-                      <Button onClick={handleBooking} className="w-full" disabled={submitting || dateUnavailable}>
-                        {submitting ? "Submitting..." : dateUnavailable ? "Date Unavailable" : `Request Booking${selectedService ? ` – ${(selectedService.price || 0).toLocaleString()} RWF` : ""}`}
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center">You won't be charged yet. The vendor will confirm first.</p>
-                    </div>
+                    )}
+
+                    {/* Step 3: Confirmation */}
+                    {paymentStep === "confirmation" && (
+                      <div className="space-y-4 text-center py-4">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                          <Check className="w-8 h-8 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground">Payment Successful!</h3>
+                          <p className="text-sm text-muted-foreground mt-1">Your booking has been submitted and payment of <strong>{depositAmount.toLocaleString()} RWF</strong> received.</p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-3 text-left space-y-1 text-sm">
+                          <div className="flex justify-between"><span className="text-muted-foreground">Vendor</span><span className="font-medium text-foreground">{vendor.business_name}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium text-foreground">{bookingDate}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Package</span><span className="font-medium text-foreground">{selectedService?.name}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span className="font-medium text-primary">{depositAmount.toLocaleString()} RWF</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Remaining</span><span className="font-medium text-foreground">{(totalAmount - depositAmount).toLocaleString()} RWF</span></div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">The vendor will review and confirm your booking. You'll be notified once confirmed.</p>
+                        <Button onClick={resetBooking} className="w-full">Done</Button>
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
               </div>
@@ -312,6 +464,7 @@ const VendorProfile = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-display font-bold text-primary">{(s.price || 0).toLocaleString()} RWF</p>
+                          <p className="text-xs text-muted-foreground">60% deposit: {Math.round((s.price || 0) * 0.6).toLocaleString()} RWF</p>
                           <Button
                             size="sm"
                             variant="outline"
@@ -337,18 +490,6 @@ const VendorProfile = () => {
                         <img src={m.url} alt={m.caption || "Gallery"} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
                       </div>
                     ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Contact info */}
-              {(vendor.phone || vendor.email) && (
-                <section>
-                  <h2 className="font-display text-xl font-semibold text-foreground mb-4">Contact</h2>
-                  <div className="bg-muted p-4 rounded-lg space-y-2">
-                    {vendor.phone && <p className="text-sm text-foreground">📞 {vendor.phone}</p>}
-                    {vendor.email && <p className="text-sm text-foreground">✉️ {vendor.email}</p>}
-                    {vendor.location && <p className="text-sm text-foreground">📍 {vendor.location}</p>}
                   </div>
                 </section>
               )}
@@ -379,11 +520,16 @@ const VendorProfile = () => {
                         ))}
                       </select>
                     )}
-                    <Button className="w-full rounded-full" variant="hero" onClick={handleBooking} disabled={submitting || dateUnavailable}>
-                      {submitting ? "Submitting..." : dateUnavailable ? "Date Unavailable" : "Request Booking"}
+                    {selectedService && (
+                      <div className="text-xs text-muted-foreground bg-muted rounded p-2">
+                        <p>Deposit (60%): <strong className="text-primary">{Math.round((selectedService.price || 0) * 0.6).toLocaleString()} RWF</strong></p>
+                      </div>
+                    )}
+                    <Button className="w-full rounded-full" variant="hero" onClick={() => setBookingOpen(true)} disabled={dateUnavailable}>
+                      {dateUnavailable ? "Date Unavailable" : "Book & Pay"}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-3">You won't be charged yet</p>
+                  <p className="text-xs text-muted-foreground text-center mt-3">60% upfront payment required</p>
                 </div>
               </div>
             </div>

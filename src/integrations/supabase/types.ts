@@ -72,6 +72,7 @@ export type Database = {
           event_date: string
           id: string
           notes: string | null
+          payment_status: string
           service_id: string | null
           status: string
           total_amount: number
@@ -85,6 +86,7 @@ export type Database = {
           event_date: string
           id?: string
           notes?: string | null
+          payment_status?: string
           service_id?: string | null
           status?: string
           total_amount?: number
@@ -98,6 +100,7 @@ export type Database = {
           event_date?: string
           id?: string
           notes?: string | null
+          payment_status?: string
           service_id?: string | null
           status?: string
           total_amount?: number
@@ -349,6 +352,47 @@ export type Database = {
           },
         ]
       }
+      vendor_payment_details: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string | null
+          created_at: string
+          id: string
+          payment_method: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_payment_details_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_services: {
         Row: {
           created_at: string
@@ -450,11 +494,62 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          commission: number
+          created_at: string
+          id: string
+          net_amount: number
+          processed_at: string | null
+          status: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          commission?: number
+          created_at?: string
+          id?: string
+          net_amount?: number
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          commission?: number
+          created_at?: string
+          id?: string
+          net_amount?: number
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_vendor_booked_dates: {
+        Args: { _vendor_id: string }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
