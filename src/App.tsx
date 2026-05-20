@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Planning from "./pages/Planning";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/planning" element={<Planning />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, Smartphone } from "lucide-react";
 
 const Footer = () => (
   <footer className="bg-foreground text-primary-foreground">
@@ -43,8 +43,17 @@ const Footer = () => (
         </div>
       </div>
 
-      <div className="border-t border-primary-foreground/10 mt-12 pt-8 text-center text-sm text-primary-foreground/40">
-        © {new Date().getFullYear()} Haruwa Rwanda. All rights reserved.
+      <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <p className="text-sm text-primary-foreground/40">
+          © {new Date().getFullYear()} Haruwa Rwanda. All rights reserved.
+        </p>
+        <Link
+          to="/install"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          <Smartphone className="w-4 h-4" />
+          Download the App
+        </Link>
       </div>
     </div>
   </footer>
