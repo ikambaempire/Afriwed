@@ -64,6 +64,286 @@ export type Database = {
           },
         ]
       }
+      blog_authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          login: string | null
+          wp_author_id: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          login?: string | null
+          wp_author_id?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          login?: string | null
+          wp_author_id?: number | null
+        }
+        Relationships: []
+      }
+      blog_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_slug: string | null
+          slug: string
+          wp_term_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_slug?: string | null
+          slug: string
+          wp_term_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_slug?: string | null
+          slug?: string
+          wp_term_id?: number | null
+        }
+        Relationships: []
+      }
+      blog_comments: {
+        Row: {
+          approved: boolean
+          author_email: string | null
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          parent_wp_comment_id: number | null
+          post_id: string
+          user_id: string | null
+          wp_comment_id: number | null
+        }
+        Insert: {
+          approved?: boolean
+          author_email?: string | null
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
+          parent_wp_comment_id?: number | null
+          post_id: string
+          user_id?: string | null
+          wp_comment_id?: number | null
+        }
+        Update: {
+          approved?: boolean
+          author_email?: string | null
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          parent_wp_comment_id?: number | null
+          post_id?: string
+          user_id?: string | null
+          wp_comment_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_media_assets: {
+        Row: {
+          created_at: string
+          error: string | null
+          hosted_url: string | null
+          id: string
+          source_url: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          hosted_url?: string | null
+          id?: string
+          source_url: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          hosted_url?: string | null
+          id?: string
+          source_url?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_post_categories: {
+        Row: {
+          category_id: string
+          post_id: string
+        }
+        Insert: {
+          category_id: string
+          post_id: string
+        }
+        Update: {
+          category_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_post_categories_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_post_tags: {
+        Row: {
+          post_id: string
+          tag_id: string
+        }
+        Insert: {
+          post_id: string
+          tag_id: string
+        }
+        Update: {
+          post_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_post_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "blog_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          content_html: string | null
+          created_at: string
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          view_count: number
+          wp_post_id: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          content_html?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          view_count?: number
+          wp_post_id?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          content_html?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+          wp_post_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "blog_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          wp_term_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          wp_term_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          wp_term_id?: number | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           client_id: string
@@ -242,6 +522,102 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      real_weddings: {
+        Row: {
+          country: string | null
+          couple_names: string
+          cover_image_url: string | null
+          created_at: string
+          featured: boolean
+          gallery_urls: Json
+          id: string
+          location: string | null
+          slug: string
+          status: string
+          story: string | null
+          submitted_by: string | null
+          updated_at: string
+          vendor_ids: Json
+          wedding_date: string | null
+          wedding_type: string | null
+        }
+        Insert: {
+          country?: string | null
+          couple_names: string
+          cover_image_url?: string | null
+          created_at?: string
+          featured?: boolean
+          gallery_urls?: Json
+          id?: string
+          location?: string | null
+          slug: string
+          status?: string
+          story?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vendor_ids?: Json
+          wedding_date?: string | null
+          wedding_type?: string | null
+        }
+        Update: {
+          country?: string | null
+          couple_names?: string
+          cover_image_url?: string | null
+          created_at?: string
+          featured?: boolean
+          gallery_urls?: Json
+          id?: string
+          location?: string | null
+          slug?: string
+          status?: string
+          story?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vendor_ids?: Json
+          wedding_date?: string | null
+          wedding_type?: string | null
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          payload: Json
+          status: string
+          submission_type: string
+          submitter_email: string | null
+          submitter_id: string | null
+          submitter_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          payload: Json
+          status?: string
+          submission_type: string
+          submitter_email?: string | null
+          submitter_id?: string | null
+          submitter_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          status?: string
+          submission_type?: string
+          submitter_email?: string | null
+          submitter_id?: string | null
+          submitter_name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
