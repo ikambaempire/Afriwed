@@ -98,7 +98,7 @@ const AdminDashboard = () => {
         business_name: p.business_name, category: p.category, description: p.description,
         location: p.location, phone: p.phone, website: p.website,
         is_approved: true, user_id: sub.submitter_id,
-      });
+      } as any);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
     await supabase.from("submissions").update({ status: "approved" }).eq("id", sub.id);
