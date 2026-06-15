@@ -17,8 +17,9 @@ const RealWeddingDetail = () => {
       setLoading(true);
       const { data } = await supabase.from("real_weddings").select("*").eq("slug", slug!).eq("status", "approved").maybeSingle();
       setW(data);
-      if (data?.vendor_ids?.length) {
-        const { data: vs } = await supabase.from("vendors").select("id, business_name, category, cover_image_url").in("id", data.vendor_ids);
+      if (data?.vendor_ids && Array.isArray(data.vendor_ids) && data.vendor_ids.length) {
+        const ids = data.vendor_ids as unknown as string[];
+        const { data: vs } = await supabase.from("vendors").select("id, business_name, category, cover_image_url").in("id", ids);
         setVendors(vs ?? []);
       }
       setLoading(false);
