@@ -36,6 +36,13 @@ const AdminDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const adFileRef = useRef<HTMLInputElement>(null);
 
+  // Editorial (Afriwedd)
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [realWeddings, setRealWeddings] = useState<any[]>([]);
+  const [pendingComments, setPendingComments] = useState<any[]>([]);
+  const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
+  const [mirroring, setMirroring] = useState(false);
+
   useEffect(() => {
     if (isAdmin) fetchAll();
   }, [isAdmin]);
@@ -55,7 +62,87 @@ const AdminDashboard = () => {
     setProfiles(pRes.data ?? []);
     setAds(aRes.data ?? []);
     setWithdrawals(wRes.data ?? []);
+
+    const [sRes, rwRes, cmRes, mPend, mDone, mErr] = await Promise.all([
+      supabase.from("submissions").select("*").order("created_at", { ascending: false }),
+      supabase.from("real_weddings").select("*").order("created_at", { ascending: false }),
+      supabase.from("blog_comments").select("*, blog_posts(title, slug)").eq("approved", false).order("created_at", { ascending: false }).limit(50),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "done"),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "error"),
+    ]);
+    setSubmissions(sRes.data ?? []);
+    setRealWeddings(rwRes.data ?? []);
+    setPendingComments(cmRes.data ?? []);
+    setMediaStats({ pending: mPend.count ?? 0, done: mDone.count ?? 0, error: mErr.count ?? 0 });
   };
+
+  const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+
+  const approveSubmission = async (sub: any) => {
+    if (sub.submission_type === "wedding") {
+      const p = sub.payload || {};
+      const slug = slugify(p.couple_names || "wedding") + "-" + sub.id.slice(0, 6);
+      const galleryArr = (p.gallery || "").split("\n").map((x: string) => x.trim()).filter(Boolean);
+      const { error } = await supabase.from("real_weddings").insert({
+        slug, couple_names: p.couple_names || "Couple", story: p.story || "",
+        location: p.location, country: p.country || "Rwanda",
+        wedding_type: (p.wedding_type || "modern").toLowerCase(),
+        wedding_date: p.wedding_date || null, cover_image_url: p.cover_image_url || null,
+        gallery_urls: galleryArr, submitted_by: sub.submitter_id, status: "approved",
+      });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    } else if (sub.submission_type === "vendor") {
+      const p = sub.payload || {};
+      const { error } = await supabase.from("vendors").insert({
+        business_name: p.business_name, category: p.category, description: p.description,
+        location: p.location, phone: p.phone, website: p.website,
+        is_approved: true, user_id: sub.submitter_id,
+      } as any);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+    await supabase.from("submissions").update({ status: "approved" }).eq("id", sub.id);
+    toast({ title: "Submission approved" });
+    fetchAll();
+  };
+
+  const rejectSubmission = async (id: string) => {
+    await supabase.from("submissions").update({ status: "rejected" }).eq("id", id);
+    toast({ title: "Submission rejected" });
+    fetchAll();
+  };
+
+  const approveComment = async (id: string, approved: boolean) => {
+    await supabase.from("blog_comments").update({ approved }).eq("id", id);
+    toast({ title: approved ? "Comment approved" : "Comment hidden" });
+    fetchAll();
+  };
+
+  const deleteComment = async (id: string) => {
+    await supabase.from("blog_comments").delete().eq("id", id);
+    toast({ title: "Comment deleted" });
+    fetchAll();
+  };
+
+  const toggleRealWeddingStatus = async (id: string, status: string) => {
+    await supabase.from("real_weddings").update({ status }).eq("id", id);
+    fetchAll();
+  };
+
+  const runMirror = async () => {
+    setMirroring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 25 } });
+      if (error) throw error;
+      toast({ title: "Image mirror batch done", description: `Succeeded ${data?.succeeded ?? 0} · Failed ${data?.failed ?? 0} · ${data?.remaining ?? 0} remaining` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Mirror failed", description: e.message, variant: "destructive" });
+    } finally {
+      setMirroring(false);
+    }
+  };
+
 
   const approveVendor = async (id: string, approved: boolean) => {
     await supabase.from("vendors").update({ is_approved: approved }).eq("id", id);
@@ -171,6 +258,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="wallet">Wallet & Withdrawals</TabsTrigger>
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="ads">Advertisements</TabsTrigger>
+              <TabsTrigger value="editorial">Editorial</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -406,6 +494,91 @@ const AdminDashboard = () => {
                     ))}
                     {ads.length === 0 && <p className="text-center py-8 text-muted-foreground">No advertisements yet</p>}
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Editorial Tab */}
+            <TabsContent value="editorial" className="space-y-6">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-4 text-sm">
+                    <span>Pending: <strong>{mediaStats.pending}</strong></span>
+                    <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
+                    <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
+                  </div>
+                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
+                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Submissions ({submissions.filter(s => s.status === "pending").length})</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {submissions.filter(s => s.status === "pending").length === 0 && <p className="text-sm text-muted-foreground">No pending submissions.</p>}
+                  {submissions.filter(s => s.status === "pending").map(s => (
+                    <div key={s.id} className="border border-border rounded-lg p-4">
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div>
+                          <Badge variant="outline" className="mb-2 capitalize">{s.submission_type}</Badge>
+                          <p className="font-semibold text-foreground">{s.payload?.couple_names || s.payload?.business_name || s.submitter_name}</p>
+                          <p className="text-xs text-muted-foreground">{s.submitter_email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveSubmission(s)}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
+                          <Button size="sm" variant="outline" onClick={() => rejectSubmission(s.id)}><XCircle className="w-4 h-4 mr-1" />Reject</Button>
+                        </div>
+                      </div>
+                      <pre className="text-xs bg-muted/50 rounded p-2 overflow-auto max-h-40">{JSON.stringify(s.payload, null, 2)}</pre>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Real Weddings ({realWeddings.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {realWeddings.length === 0 && <p className="text-sm text-muted-foreground">No real weddings yet.</p>}
+                  {realWeddings.map(w => (
+                    <div key={w.id} className="flex justify-between items-center border border-border rounded-lg p-3">
+                      <div>
+                        <p className="font-medium text-foreground">{w.couple_names}</p>
+                        <p className="text-xs text-muted-foreground">{w.location} · <Badge variant={w.status === "approved" ? "default" : "outline"} className="capitalize">{w.status}</Badge></p>
+                      </div>
+                      <Select value={w.status} onValueChange={(v) => toggleRealWeddingStatus(w.id, v)}>
+                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
+                  {pendingComments.map(c => (
+                    <div key={c.id} className="border border-border rounded-lg p-3">
+                      <div className="flex justify-between items-start gap-3 mb-1">
+                        <div>
+                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </TabsContent>

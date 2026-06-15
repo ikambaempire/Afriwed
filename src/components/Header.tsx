@@ -24,6 +24,12 @@ const Header = () => {
           <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Find Vendors
           </Link>
+          <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Real Weddings
+          </Link>
+          <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Stories
+          </Link>
           <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Plan Wedding
           </Link>
@@ -74,6 +80,12 @@ const Header = () => {
           <nav className="flex flex-col gap-3 py-3">
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Find Vendors
+            </Link>
+            <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+              Real Weddings
+            </Link>
+            <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+              Stories
             </Link>
             <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Plan Wedding

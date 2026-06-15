@@ -7,6 +7,7 @@ import HowItWorks from "@/components/home/HowItWorks";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import PartnersSection from "@/components/home/PartnersSection";
 import AdBanner from "@/components/home/AdBanner";
+import StoriesPreview from "@/components/home/StoriesPreview";
 
 const Index = () => (
   <>
@@ -16,6 +17,7 @@ const Index = () => (
       <AdBanner />
       <CategoriesSection />
       <FeaturedVendors />
+      <StoriesPreview />
       <HowItWorks />
       <PartnersSection />
       <TestimonialsSection />

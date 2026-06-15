@@ -21,6 +21,7 @@ const Footer = () => (
             <li><Link to="/vendors" className="hover:text-primary transition-colors">Find Vendors</Link></li>
             <li><Link to="/planning" className="hover:text-primary transition-colors">Wedding Checklist</Link></li>
             <li><Link to="/planning" className="hover:text-primary transition-colors">Budget Planner</Link></li>
+            <li><Link to="/real-weddings" className="hover:text-primary transition-colors">Real Weddings</Link></li>
           </ul>
         </div>
 
@@ -28,8 +29,8 @@ const Footer = () => (
           <h4 className="font-display text-sm font-semibold mb-4">For Vendors</h4>
           <ul className="space-y-2 text-sm text-primary-foreground/60">
             <li><Link to="/auth?tab=vendor" className="hover:text-primary transition-colors">List Your Business</Link></li>
+            <li><Link to="/submit?type=vendor" className="hover:text-primary transition-colors">Submit a Listing</Link></li>
             <li><Link to="/vendors" className="hover:text-primary transition-colors">Pricing</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">Success Stories</Link></li>
           </ul>
         </div>
 

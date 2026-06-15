@@ -14,6 +14,11 @@ import Planning from "./pages/Planning";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
+import Stories from "./pages/Stories";
+import StoryDetail from "./pages/StoryDetail";
+import RealWeddings from "./pages/RealWeddings";
+import RealWeddingDetail from "./pages/RealWeddingDetail";
+import Submit from "./pages/Submit";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +39,11 @@ const App = () => (
             <Route path="/planning" element={<Planning />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/stories" element={<Stories />} />
+            <Route path="/stories/:slug" element={<StoryDetail />} />
+            <Route path="/real-weddings" element={<RealWeddings />} />
+            <Route path="/real-weddings/:slug" element={<RealWeddingDetail />} />
+            <Route path="/submit" element={<Submit />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
