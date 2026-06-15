@@ -62,7 +62,87 @@ const AdminDashboard = () => {
     setProfiles(pRes.data ?? []);
     setAds(aRes.data ?? []);
     setWithdrawals(wRes.data ?? []);
+
+    const [sRes, rwRes, cmRes, mPend, mDone, mErr] = await Promise.all([
+      supabase.from("submissions").select("*").order("created_at", { ascending: false }),
+      supabase.from("real_weddings").select("*").order("created_at", { ascending: false }),
+      supabase.from("blog_comments").select("*, blog_posts(title, slug)").eq("approved", false).order("created_at", { ascending: false }).limit(50),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "done"),
+      supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "error"),
+    ]);
+    setSubmissions(sRes.data ?? []);
+    setRealWeddings(rwRes.data ?? []);
+    setPendingComments(cmRes.data ?? []);
+    setMediaStats({ pending: mPend.count ?? 0, done: mDone.count ?? 0, error: mErr.count ?? 0 });
   };
+
+  const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+
+  const approveSubmission = async (sub: any) => {
+    if (sub.submission_type === "wedding") {
+      const p = sub.payload || {};
+      const slug = slugify(p.couple_names || "wedding") + "-" + sub.id.slice(0, 6);
+      const galleryArr = (p.gallery || "").split("\n").map((x: string) => x.trim()).filter(Boolean);
+      const { error } = await supabase.from("real_weddings").insert({
+        slug, couple_names: p.couple_names || "Couple", story: p.story || "",
+        location: p.location, country: p.country || "Rwanda",
+        wedding_type: (p.wedding_type || "modern").toLowerCase(),
+        wedding_date: p.wedding_date || null, cover_image_url: p.cover_image_url || null,
+        gallery_urls: galleryArr, submitted_by: sub.submitter_id, status: "approved",
+      });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    } else if (sub.submission_type === "vendor") {
+      const p = sub.payload || {};
+      const { error } = await supabase.from("vendors").insert({
+        business_name: p.business_name, category: p.category, description: p.description,
+        location: p.location, phone: p.phone, website: p.website,
+        is_approved: true, user_id: sub.submitter_id,
+      });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+    await supabase.from("submissions").update({ status: "approved" }).eq("id", sub.id);
+    toast({ title: "Submission approved" });
+    fetchAll();
+  };
+
+  const rejectSubmission = async (id: string) => {
+    await supabase.from("submissions").update({ status: "rejected" }).eq("id", id);
+    toast({ title: "Submission rejected" });
+    fetchAll();
+  };
+
+  const approveComment = async (id: string, approved: boolean) => {
+    await supabase.from("blog_comments").update({ approved }).eq("id", id);
+    toast({ title: approved ? "Comment approved" : "Comment hidden" });
+    fetchAll();
+  };
+
+  const deleteComment = async (id: string) => {
+    await supabase.from("blog_comments").delete().eq("id", id);
+    toast({ title: "Comment deleted" });
+    fetchAll();
+  };
+
+  const toggleRealWeddingStatus = async (id: string, status: string) => {
+    await supabase.from("real_weddings").update({ status }).eq("id", id);
+    fetchAll();
+  };
+
+  const runMirror = async () => {
+    setMirroring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 25 } });
+      if (error) throw error;
+      toast({ title: "Image mirror batch done", description: `Succeeded ${data?.succeeded ?? 0} · Failed ${data?.failed ?? 0} · ${data?.remaining ?? 0} remaining` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Mirror failed", description: e.message, variant: "destructive" });
+    } finally {
+      setMirroring(false);
+    }
+  };
+
 
   const approveVendor = async (id: string, approved: boolean) => {
     await supabase.from("vendors").update({ is_approved: approved }).eq("id", id);
