@@ -36,6 +36,13 @@ const AdminDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const adFileRef = useRef<HTMLInputElement>(null);
 
+  // Editorial (Afriwedd)
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [realWeddings, setRealWeddings] = useState<any[]>([]);
+  const [pendingComments, setPendingComments] = useState<any[]>([]);
+  const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
+  const [mirroring, setMirroring] = useState(false);
+
   useEffect(() => {
     if (isAdmin) fetchAll();
   }, [isAdmin]);
