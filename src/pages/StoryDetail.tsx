@@ -110,7 +110,11 @@ const StoryDetail = () => {
             </Link>
             <h1 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight mb-6">{post.title}</h1>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-10 pb-8 border-b border-border">
-              {post.author && <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>}
+              {post.author && (
+                post.author.slug
+                  ? <Link to={`/authors/${post.author.slug}`} className="flex items-center gap-1 hover:text-primary"><User className="w-3 h-3" />{post.author.display_name}</Link>
+                  : <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>
+              )}
               {post.published_at && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.published_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>}
             </div>
             <div className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-a:text-primary prose-img:rounded-xl" dangerouslySetInnerHTML={{ __html: post.content_html || "" }} />
