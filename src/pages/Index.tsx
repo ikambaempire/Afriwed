@@ -7,6 +7,8 @@ import HowItWorks from "@/components/home/HowItWorks";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import PartnersSection from "@/components/home/PartnersSection";
 import AdBanner from "@/components/home/AdBanner";
+import EditorialFeature from "@/components/home/EditorialFeature";
+import RealWeddingsPreview from "@/components/home/RealWeddingsPreview";
 import StoriesPreview from "@/components/home/StoriesPreview";
 
 const Index = () => (
@@ -14,10 +16,12 @@ const Index = () => (
     <Header />
     <main>
       <HeroSection />
+      <EditorialFeature />
+      <RealWeddingsPreview />
+      <StoriesPreview />
       <AdBanner />
       <CategoriesSection />
       <FeaturedVendors />
-      <StoriesPreview />
       <HowItWorks />
       <PartnersSection />
       <TestimonialsSection />
