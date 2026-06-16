@@ -24,7 +24,7 @@ const StoryDetail = () => {
       setLoading(true);
       const { data: p } = await supabase
         .from("blog_posts")
-        .select("*, author:blog_authors(display_name, bio, avatar_url)")
+        .select("*, author:blog_authors(display_name, bio, avatar_url, slug)")
         .eq("slug", slug!)
         .eq("status", "publish")
         .maybeSingle();
