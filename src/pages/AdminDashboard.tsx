@@ -657,6 +657,10 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="authors">
+              <AuthorApplicationsTab />
+            </TabsContent>
           </Tabs>
         </div>
       </main>
