@@ -260,6 +260,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="ads">Advertisements</TabsTrigger>
               <TabsTrigger value="editorial">Editorial</TabsTrigger>
+              <TabsTrigger value="authors">Authors</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
