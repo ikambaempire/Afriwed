@@ -34,7 +34,8 @@ const RealWeddings = () => {
       <Helmet>
         <title>Real African Weddings — Afriwedd</title>
         <meta name="description" content="Browse beautiful real wedding stories from across Africa. Filter by country, style, and tradition." />
-        <link rel="canonical" href="/real-weddings" />
+        <link rel="canonical" href="https://haruwa1.lovable.app/real-weddings" />
+        <meta property="og:url" content="https://haruwa1.lovable.app/real-weddings" />
       </Helmet>
       <Header />
       <main className="pt-16">
