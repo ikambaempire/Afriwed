@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle } from "lucide-react";
+import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isAdmin, isVendor, signOut } = useAuth();
+  const { user, isAdmin, isVendor, isAuthor, signOut } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
