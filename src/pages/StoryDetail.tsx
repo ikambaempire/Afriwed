@@ -24,7 +24,7 @@ const StoryDetail = () => {
       setLoading(true);
       const { data: p } = await supabase
         .from("blog_posts")
-        .select("*, author:blog_authors(display_name, bio, avatar_url)")
+        .select("*, author:blog_authors(display_name, bio, avatar_url, slug)")
         .eq("slug", slug!)
         .eq("status", "publish")
         .maybeSingle();
@@ -73,14 +73,26 @@ const StoryDetail = () => {
       <Helmet>
         <title>{post.title} — Afriwedd</title>
         <meta name="description" content={(post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
-        <link rel="canonical" href={`/stories/${post.slug}`} />
+        <link rel="canonical" href={`https://haruwa1.lovable.app/stories/${post.slug}`} />
         <meta property="og:title" content={post.title} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://haruwa1.lovable.app/stories/${post.slug}`} />
         {post.featured_image_url && <meta property="og:image" content={post.featured_image_url} />}
         <script type="application/ld+json">{JSON.stringify({
-          "@context": "https://schema.org", "@type": "Article",
-          headline: post.title, datePublished: post.published_at,
-          author: post.author ? { "@type": "Person", name: post.author.display_name } : undefined,
-          image: post.featured_image_url || undefined,
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: post.title,
+          description: (post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 200),
+          datePublished: post.published_at,
+          dateModified: post.updated_at || post.published_at,
+          mainEntityOfPage: `https://haruwa1.lovable.app/stories/${post.slug}`,
+          author: post.author ? {
+            "@type": "Person",
+            name: post.author.display_name,
+            url: post.author.slug ? `https://haruwa1.lovable.app/authors/${post.author.slug}` : undefined,
+          } : undefined,
+          image: post.featured_image_url ? [post.featured_image_url] : undefined,
+          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://haruwa1.lovable.app" },
         })}</script>
       </Helmet>
       <Header />
@@ -98,7 +110,11 @@ const StoryDetail = () => {
             </Link>
             <h1 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight mb-6">{post.title}</h1>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-10 pb-8 border-b border-border">
-              {post.author && <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>}
+              {post.author && (
+                post.author.slug
+                  ? <Link to={`/authors/${post.author.slug}`} className="flex items-center gap-1 hover:text-primary"><User className="w-3 h-3" />{post.author.display_name}</Link>
+                  : <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>
+              )}
               {post.published_at && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.published_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>}
             </div>
             <div className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-a:text-primary prose-img:rounded-xl" dangerouslySetInnerHTML={{ __html: post.content_html || "" }} />

@@ -8,7 +8,9 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isVendor: boolean;
+  isAuthor: boolean;
   vendorId: string | null;
+  authorId: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -18,7 +20,9 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   isVendor: false,
+  isAuthor: false,
   vendorId: null,
+  authorId: null,
   signOut: async () => {},
 });
 
@@ -28,24 +32,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
   const [vendorId, setVendorId] = useState<string | null>(null);
+  const [authorId, setAuthorId] = useState<string | null>(null);
 
   const checkRoles = async (userId: string) => {
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    
+
     setIsAdmin(roles?.some((r: any) => r.role === "admin") ?? false);
     setIsVendor(roles?.some((r: any) => r.role === "vendor") ?? false);
+    setIsAuthor(roles?.some((r: any) => r.role === "author") ?? false);
 
     const { data: vendor } = await supabase
       .from("vendors")
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    
+
     setVendorId(vendor?.id ?? null);
+
+    const { data: author } = await (supabase as any)
+      .from("blog_authors")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    setAuthorId(author?.id ?? null);
   };
 
   useEffect(() => {
@@ -57,7 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setIsAdmin(false);
         setIsVendor(false);
+        setIsAuthor(false);
         setVendorId(null);
+        setAuthorId(null);
       }
       setLoading(false);
     });
@@ -77,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isVendor, vendorId, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isVendor, isAuthor, vendorId, authorId, signOut }}>
       {children}
     </AuthContext.Provider>
   );

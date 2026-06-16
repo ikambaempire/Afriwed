@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle } from "lucide-react";
+import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isAdmin, isVendor, signOut } = useAuth();
+  const { user, isAdmin, isVendor, isAuthor, signOut } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -36,6 +36,11 @@ const Header = () => {
           {user && (
             <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               <MessageCircle className="w-4 h-4 inline mr-1" />Messages
+            </Link>
+          )}
+          {isAuthor && (
+            <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <PenLine className="w-4 h-4 inline mr-1" />Author
             </Link>
           )}
           {isVendor && (
@@ -100,9 +105,19 @@ const Header = () => {
                 Vendor Dashboard
               </Link>
             )}
+            {isAuthor && (
+              <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Author Dashboard
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
                 Admin Panel
+              </Link>
+            )}
+            {user && !isAuthor && (
+              <Link to="/author-apply" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Become an Author
               </Link>
             )}
             <div className="flex gap-2 pt-2">

@@ -36,7 +36,30 @@ const RealWeddingDetail = () => {
       <Helmet>
         <title>{w.couple_names} — Real Wedding | Afriwedd</title>
         <meta name="description" content={(w.story || "").slice(0, 155)} />
-        <link rel="canonical" href={`/real-weddings/${w.slug}`} />
+        <link rel="canonical" href={`https://haruwa1.lovable.app/real-weddings/${w.slug}`} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://haruwa1.lovable.app/real-weddings/${w.slug}`} />
+        <meta property="og:title" content={`${w.couple_names} — Real Wedding`} />
+        {w.cover_image_url && <meta property="og:image" content={w.cover_image_url} />}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: `${w.couple_names} — Real Wedding`,
+          description: (w.story || "").slice(0, 200),
+          datePublished: w.created_at,
+          image: w.cover_image_url ? [w.cover_image_url] : undefined,
+          mainEntityOfPage: `https://haruwa1.lovable.app/real-weddings/${w.slug}`,
+          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://haruwa1.lovable.app" },
+        })}</script>
+        {gallery.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ImageGallery",
+            name: `${w.couple_names} — Wedding Gallery`,
+            url: `https://haruwa1.lovable.app/real-weddings/${w.slug}`,
+            image: gallery,
+          })}</script>
+        )}
       </Helmet>
       <Header />
       <main className="pt-16">

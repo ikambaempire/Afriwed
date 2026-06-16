@@ -67,7 +67,12 @@ const Stories = () => {
       <Helmet>
         <title>Stories & Editorial — Afriwedd | Haruwa</title>
         <meta name="description" content="Real African wedding stories, cultural inspiration, planning guides, and editorial coverage from across the continent." />
-        <link rel="canonical" href="/stories" />
+        <link rel="canonical" href="https://haruwa1.lovable.app/stories" />
+        <meta property="og:url" content="https://haruwa1.lovable.app/stories" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org", "@type": "Blog",
+          name: "Afriwedd Editorial", url: "https://haruwa1.lovable.app/stories",
+        })}</script>
       </Helmet>
       <Header />
       <main className="pt-16">

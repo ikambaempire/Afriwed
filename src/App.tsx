@@ -19,6 +19,9 @@ import StoryDetail from "./pages/StoryDetail";
 import RealWeddings from "./pages/RealWeddings";
 import RealWeddingDetail from "./pages/RealWeddingDetail";
 import Submit from "./pages/Submit";
+import AuthorApply from "./pages/AuthorApply";
+import AuthorProfile from "./pages/AuthorProfile";
+import AuthorDashboard from "./pages/AuthorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,9 @@ const App = () => (
             <Route path="/real-weddings" element={<RealWeddings />} />
             <Route path="/real-weddings/:slug" element={<RealWeddingDetail />} />
             <Route path="/submit" element={<Submit />} />
+            <Route path="/author-apply" element={<AuthorApply />} />
+            <Route path="/author-dashboard" element={<AuthorDashboard />} />
+            <Route path="/authors/:slug" element={<AuthorProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
