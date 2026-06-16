@@ -64,6 +64,45 @@ export type Database = {
           },
         ]
       }
+      author_applications: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sample_links: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sample_links?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sample_links?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       blog_authors: {
         Row: {
           avatar_url: string | null
@@ -71,8 +110,12 @@ export type Database = {
           created_at: string
           display_name: string
           email: string | null
+          featured_wedding_ids: Json | null
           id: string
           login: string | null
+          slug: string | null
+          social_links: Json | null
+          user_id: string | null
           wp_author_id: number | null
         }
         Insert: {
@@ -81,8 +124,12 @@ export type Database = {
           created_at?: string
           display_name: string
           email?: string | null
+          featured_wedding_ids?: Json | null
           id?: string
           login?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          user_id?: string | null
           wp_author_id?: number | null
         }
         Update: {
@@ -91,8 +138,12 @@ export type Database = {
           created_at?: string
           display_name?: string
           email?: string | null
+          featured_wedding_ids?: Json | null
           id?: string
           login?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          user_id?: string | null
           wp_author_id?: number | null
         }
         Relationships: []
@@ -922,6 +973,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_author_id: { Args: never; Returns: string }
       get_vendor_booked_dates: {
         Args: { _vendor_id: string }
         Returns: string[]
