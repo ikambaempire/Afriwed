@@ -110,11 +110,6 @@ const Header = () => {
                 Author Dashboard
               </Link>
             )}
-            {isVendor && (
-              <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Vendor Dashboard
-              </Link>
-            )}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
                 Admin Panel
