@@ -105,9 +105,24 @@ const Header = () => {
                 Vendor Dashboard
               </Link>
             )}
+            {isAuthor && (
+              <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Author Dashboard
+              </Link>
+            )}
+            {isVendor && (
+              <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Vendor Dashboard
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
                 Admin Panel
+              </Link>
+            )}
+            {user && !isAuthor && (
+              <Link to="/author-apply" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
+                Become an Author
               </Link>
             )}
             <div className="flex gap-2 pt-2">
