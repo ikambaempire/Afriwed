@@ -38,6 +38,11 @@ const Header = () => {
               <MessageCircle className="w-4 h-4 inline mr-1" />Messages
             </Link>
           )}
+          {isAuthor && (
+            <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <PenLine className="w-4 h-4 inline mr-1" />Author
+            </Link>
+          )}
           {isVendor && (
             <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               <LayoutDashboard className="w-4 h-4 inline mr-1" />Vendor Dashboard
