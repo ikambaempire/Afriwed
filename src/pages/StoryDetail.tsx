@@ -73,14 +73,26 @@ const StoryDetail = () => {
       <Helmet>
         <title>{post.title} — Afriwedd</title>
         <meta name="description" content={(post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
-        <link rel="canonical" href={`/stories/${post.slug}`} />
+        <link rel="canonical" href={`https://haruwa1.lovable.app/stories/${post.slug}`} />
         <meta property="og:title" content={post.title} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://haruwa1.lovable.app/stories/${post.slug}`} />
         {post.featured_image_url && <meta property="og:image" content={post.featured_image_url} />}
         <script type="application/ld+json">{JSON.stringify({
-          "@context": "https://schema.org", "@type": "Article",
-          headline: post.title, datePublished: post.published_at,
-          author: post.author ? { "@type": "Person", name: post.author.display_name } : undefined,
-          image: post.featured_image_url || undefined,
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: post.title,
+          description: (post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 200),
+          datePublished: post.published_at,
+          dateModified: post.updated_at || post.published_at,
+          mainEntityOfPage: `https://haruwa1.lovable.app/stories/${post.slug}`,
+          author: post.author ? {
+            "@type": "Person",
+            name: post.author.display_name,
+            url: post.author.slug ? `https://haruwa1.lovable.app/authors/${post.author.slug}` : undefined,
+          } : undefined,
+          image: post.featured_image_url ? [post.featured_image_url] : undefined,
+          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://haruwa1.lovable.app" },
         })}</script>
       </Helmet>
       <Header />
