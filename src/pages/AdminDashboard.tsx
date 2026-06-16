@@ -17,6 +17,7 @@ import {
   Wallet, ArrowDownRight, ArrowUpRight
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 
 const AdminDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
