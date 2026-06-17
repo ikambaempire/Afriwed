@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
+import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
+import { BookOpen, Briefcase } from "lucide-react";
 
 const AdminDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -27,6 +29,13 @@ const AdminDashboard = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [ads, setAds] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [mode, setMode] = useState<"marketplace" | "editorial">(() =>
+    (typeof window !== "undefined" && (localStorage.getItem("admin_mode") as any)) || "marketplace"
+  );
+  const switchMode = (m: "marketplace" | "editorial") => {
+    setMode(m);
+    if (typeof window !== "undefined") localStorage.setItem("admin_mode", m);
+  };
 
   // New ad form
   const [adTitle, setAdTitle] = useState("");
