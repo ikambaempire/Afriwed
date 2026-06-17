@@ -545,90 +545,6 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
-            {/* Editorial Tab */}
-            <TabsContent value="editorial" className="space-y-6">
-              <Card>
-                <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-4 text-sm">
-                    <span>Pending: <strong>{mediaStats.pending}</strong></span>
-                    <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
-                    <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
-                  </div>
-                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
-                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Submissions ({submissions.filter(s => s.status === "pending").length})</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {submissions.filter(s => s.status === "pending").length === 0 && <p className="text-sm text-muted-foreground">No pending submissions.</p>}
-                  {submissions.filter(s => s.status === "pending").map(s => (
-                    <div key={s.id} className="border border-border rounded-lg p-4">
-                      <div className="flex justify-between items-start gap-3 mb-2">
-                        <div>
-                          <Badge variant="outline" className="mb-2 capitalize">{s.submission_type}</Badge>
-                          <p className="font-semibold text-foreground">{s.payload?.couple_names || s.payload?.business_name || s.submitter_name}</p>
-                          <p className="text-xs text-muted-foreground">{s.submitter_email}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveSubmission(s)}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
-                          <Button size="sm" variant="outline" onClick={() => rejectSubmission(s.id)}><XCircle className="w-4 h-4 mr-1" />Reject</Button>
-                        </div>
-                      </div>
-                      <pre className="text-xs bg-muted/50 rounded p-2 overflow-auto max-h-40">{JSON.stringify(s.payload, null, 2)}</pre>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Real Weddings ({realWeddings.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {realWeddings.length === 0 && <p className="text-sm text-muted-foreground">No real weddings yet.</p>}
-                  {realWeddings.map(w => (
-                    <div key={w.id} className="flex justify-between items-center border border-border rounded-lg p-3">
-                      <div>
-                        <p className="font-medium text-foreground">{w.couple_names}</p>
-                        <p className="text-xs text-muted-foreground">{w.location} · <Badge variant={w.status === "approved" ? "default" : "outline"} className="capitalize">{w.status}</Badge></p>
-                      </div>
-                      <Select value={w.status} onValueChange={(v) => toggleRealWeddingStatus(w.id, v)}>
-                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
-                  {pendingComments.map(c => (
-                    <div key={c.id} className="border border-border rounded-lg p-3">
-                      <div className="flex justify-between items-start gap-3 mb-1">
-                        <div>
-                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             {/* Transactions Tab */}
             <TabsContent value="transactions">
@@ -703,11 +619,113 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="authors">
+          </Tabs>
+          ) : (
+          <Tabs defaultValue="submissions" className="space-y-6">
+            <TabsList className="flex-wrap h-auto gap-1">
+              <TabsTrigger value="submissions">Submissions</TabsTrigger>
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="real-weddings">Real Weddings</TabsTrigger>
+              <TabsTrigger value="authors">Authors</TabsTrigger>
+              <TabsTrigger value="mirror">Image Mirror</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="submissions" className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Submissions ({submissions.filter(s => s.status === "pending").length})</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {submissions.filter(s => s.status === "pending").length === 0 && <p className="text-sm text-muted-foreground">No pending submissions.</p>}
+                  {submissions.filter(s => s.status === "pending").map(s => (
+                    <div key={s.id} className="border border-border rounded-lg p-4">
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div>
+                          <Badge variant="outline" className="mb-2 capitalize">{s.submission_type}</Badge>
+                          <p className="font-semibold text-foreground">{s.payload?.couple_names || s.payload?.business_name || s.submitter_name}</p>
+                          <p className="text-xs text-muted-foreground">{s.submitter_email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveSubmission(s)}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
+                          <Button size="sm" variant="outline" onClick={() => rejectSubmission(s.id)}><XCircle className="w-4 h-4 mr-1" />Reject</Button>
+                        </div>
+                      </div>
+                      <pre className="text-xs bg-muted/50 rounded p-2 overflow-auto max-h-40">{JSON.stringify(s.payload, null, 2)}</pre>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="comments">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
+                  {pendingComments.map(c => (
+                    <div key={c.id} className="border border-border rounded-lg p-3">
+                      <div className="flex justify-between items-start gap-3 mb-1">
+                        <div>
+                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="real-weddings">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Real Weddings ({realWeddings.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {realWeddings.length === 0 && <p className="text-sm text-muted-foreground">No real weddings yet.</p>}
+                  {realWeddings.map(w => (
+                    <div key={w.id} className="flex justify-between items-center border border-border rounded-lg p-3">
+                      <div>
+                        <p className="font-medium text-foreground">{w.couple_names}</p>
+                        <p className="text-xs text-muted-foreground">{w.location} · <Badge variant={w.status === "approved" ? "default" : "outline"} className="capitalize">{w.status}</Badge></p>
+                      </div>
+                      <Select value={w.status} onValueChange={(v) => toggleRealWeddingStatus(w.id, v)}>
+                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="authors" className="space-y-6">
+              <PromoteAuthorCard onDone={fetchAll} />
               <AuthorApplicationsTab />
             </TabsContent>
+
+            <TabsContent value="mirror">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-4 text-sm">
+                    <span>Pending: <strong>{mediaStats.pending}</strong></span>
+                    <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
+                    <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
+                  </div>
+                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
+                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
-        </div>
+          )}
       </main>
     </>
   );
