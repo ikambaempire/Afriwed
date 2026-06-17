@@ -15,7 +15,40 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { PenLine, Eye, Trash2, Plus, ExternalLink } from "lucide-react";
+import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import { useRef } from "react";
+
+const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `blog/featured/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success("Featured image uploaded");
+    } catch (err: any) { toast.error(err.message); } finally { setUploading(false); }
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={value} onChange={e => onChange(e.target.value)} placeholder="https://... or upload below" />
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          <Upload className="w-4 h-4 mr-1" />{uploading ? "Uploading…" : "Upload"}
+        </Button>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={upload} />
+      </div>
+      {value && <img src={value} alt="" className="w-40 h-24 object-cover rounded-md border border-border" />}
+    </div>
+  );
+};
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -198,9 +231,16 @@ const AuthorDashboard = () => {
             <div className="space-y-4">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
               <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
-              <div><Label>Featured image URL</Label><Input value={form.featured_image_url} onChange={e => setForm({ ...form, featured_image_url: e.target.value })} placeholder="https://..." /></div>
+              <div>
+                <Label>Featured image</Label>
+                <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
+              </div>
               <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
-              <div><Label>Content (HTML supported)</Label><Textarea value={form.content_html} onChange={e => setForm({ ...form, content_html: e.target.value })} rows={14} className="font-mono text-sm" /></div>
+              <div>
+                <Label>Content</Label>
+                <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
+                <p className="text-xs text-muted-foreground mt-1">Use the toolbar to add images from your device, links, headings and quotes anywhere in the article.</p>
+              </div>
               <div><Label>Status</Label>
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>

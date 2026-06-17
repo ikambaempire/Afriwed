@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
+import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
+import { BookOpen, Briefcase } from "lucide-react";
 
 const AdminDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -27,6 +29,13 @@ const AdminDashboard = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [ads, setAds] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [mode, setMode] = useState<"marketplace" | "editorial">(() =>
+    (typeof window !== "undefined" && (localStorage.getItem("admin_mode") as any)) || "marketplace"
+  );
+  const switchMode = (m: "marketplace" | "editorial") => {
+    setMode(m);
+    if (typeof window !== "undefined") localStorage.setItem("admin_mode", m);
+  };
 
   // New ad form
   const [adTitle, setAdTitle] = useState("");
@@ -240,27 +249,63 @@ const AdminDashboard = () => {
       <Header />
       <main className="pt-20 pb-16 bg-background min-h-screen">
         <div className="container mx-auto px-4">
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground text-sm mt-1">Platform overview, payments & management</p>
+            <p className="text-muted-foreground text-sm mt-1">Choose a workspace to manage</p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Wallet className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Admin Wallet</p><p className="text-xl font-bold text-foreground">{walletBalance.toLocaleString()} RWF</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Commission Earned</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Store className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Total Vendors</p><p className="text-xl font-bold text-foreground">{vendors.length}</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Users</p><p className="text-xl font-bold text-foreground">{profiles.length}</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-foreground">{pendingVendors + pendingWithdrawals.length}</p></div></div></CardContent></Card>
+          {/* Workspace switcher */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-8">
+            <button
+              onClick={() => switchMode("marketplace")}
+              className={`text-left p-5 rounded-xl border-2 transition-all ${mode === "marketplace" ? "border-primary bg-primary/5 shadow-md" : "border-border bg-card hover:border-primary/40"}`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Briefcase className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <p className="font-display text-lg font-bold">Haruwa — Wedding Management</p>
+                  <p className="text-xs text-muted-foreground">Vendors, bookings, payments & withdrawals</p>
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => switchMode("editorial")}
+              className={`text-left p-5 rounded-xl border-2 transition-all ${mode === "editorial" ? "border-primary bg-primary/5 shadow-md" : "border-border bg-card hover:border-primary/40"}`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <p className="font-display text-lg font-bold">Afriwedd — Editorial Management</p>
+                  <p className="text-xs text-muted-foreground">Articles, authors, submissions & comments</p>
+                </div>
+              </div>
+            </button>
           </div>
 
+          {/* Stats — contextual */}
+          {mode === "marketplace" ? (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Wallet className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Admin Wallet</p><p className="text-xl font-bold text-foreground">{walletBalance.toLocaleString()} RWF</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Commission Earned</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Store className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Total Vendors</p><p className="text-xl font-bold text-foreground">{vendors.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Users</p><p className="text-xl font-bold text-foreground">{profiles.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-foreground">{pendingVendors + pendingWithdrawals.length}</p></div></div></CardContent></Card>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><BookOpen className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Real Weddings</p><p className="text-xl font-bold text-foreground">{realWeddings.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Pending Submissions</p><p className="text-xl font-bold text-foreground">{submissions.filter(s => s.status === "pending").length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending Comments</p><p className="text-xl font-bold text-foreground">{pendingComments.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><ImageIcon className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Images to mirror</p><p className="text-xl font-bold text-foreground">{mediaStats.pending}</p></div></div></CardContent></Card>
+            </div>
+          )}
+
+          {mode === "marketplace" ? (
           <Tabs defaultValue="wallet" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
               <TabsTrigger value="wallet">Wallet & Withdrawals</TabsTrigger>
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="ads">Advertisements</TabsTrigger>
-              <TabsTrigger value="editorial">Editorial</TabsTrigger>
-              <TabsTrigger value="authors">Authors</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -500,90 +545,6 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
-            {/* Editorial Tab */}
-            <TabsContent value="editorial" className="space-y-6">
-              <Card>
-                <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-4 text-sm">
-                    <span>Pending: <strong>{mediaStats.pending}</strong></span>
-                    <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
-                    <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
-                  </div>
-                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
-                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Submissions ({submissions.filter(s => s.status === "pending").length})</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {submissions.filter(s => s.status === "pending").length === 0 && <p className="text-sm text-muted-foreground">No pending submissions.</p>}
-                  {submissions.filter(s => s.status === "pending").map(s => (
-                    <div key={s.id} className="border border-border rounded-lg p-4">
-                      <div className="flex justify-between items-start gap-3 mb-2">
-                        <div>
-                          <Badge variant="outline" className="mb-2 capitalize">{s.submission_type}</Badge>
-                          <p className="font-semibold text-foreground">{s.payload?.couple_names || s.payload?.business_name || s.submitter_name}</p>
-                          <p className="text-xs text-muted-foreground">{s.submitter_email}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveSubmission(s)}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
-                          <Button size="sm" variant="outline" onClick={() => rejectSubmission(s.id)}><XCircle className="w-4 h-4 mr-1" />Reject</Button>
-                        </div>
-                      </div>
-                      <pre className="text-xs bg-muted/50 rounded p-2 overflow-auto max-h-40">{JSON.stringify(s.payload, null, 2)}</pre>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Real Weddings ({realWeddings.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {realWeddings.length === 0 && <p className="text-sm text-muted-foreground">No real weddings yet.</p>}
-                  {realWeddings.map(w => (
-                    <div key={w.id} className="flex justify-between items-center border border-border rounded-lg p-3">
-                      <div>
-                        <p className="font-medium text-foreground">{w.couple_names}</p>
-                        <p className="text-xs text-muted-foreground">{w.location} · <Badge variant={w.status === "approved" ? "default" : "outline"} className="capitalize">{w.status}</Badge></p>
-                      </div>
-                      <Select value={w.status} onValueChange={(v) => toggleRealWeddingStatus(w.id, v)}>
-                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
-                  {pendingComments.map(c => (
-                    <div key={c.id} className="border border-border rounded-lg p-3">
-                      <div className="flex justify-between items-start gap-3 mb-1">
-                        <div>
-                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             {/* Transactions Tab */}
             <TabsContent value="transactions">
@@ -658,10 +619,113 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="authors">
+          </Tabs>
+          ) : (
+          <Tabs defaultValue="submissions" className="space-y-6">
+            <TabsList className="flex-wrap h-auto gap-1">
+              <TabsTrigger value="submissions">Submissions</TabsTrigger>
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="real-weddings">Real Weddings</TabsTrigger>
+              <TabsTrigger value="authors">Authors</TabsTrigger>
+              <TabsTrigger value="mirror">Image Mirror</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="submissions" className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Submissions ({submissions.filter(s => s.status === "pending").length})</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {submissions.filter(s => s.status === "pending").length === 0 && <p className="text-sm text-muted-foreground">No pending submissions.</p>}
+                  {submissions.filter(s => s.status === "pending").map(s => (
+                    <div key={s.id} className="border border-border rounded-lg p-4">
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div>
+                          <Badge variant="outline" className="mb-2 capitalize">{s.submission_type}</Badge>
+                          <p className="font-semibold text-foreground">{s.payload?.couple_names || s.payload?.business_name || s.submitter_name}</p>
+                          <p className="text-xs text-muted-foreground">{s.submitter_email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveSubmission(s)}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
+                          <Button size="sm" variant="outline" onClick={() => rejectSubmission(s.id)}><XCircle className="w-4 h-4 mr-1" />Reject</Button>
+                        </div>
+                      </div>
+                      <pre className="text-xs bg-muted/50 rounded p-2 overflow-auto max-h-40">{JSON.stringify(s.payload, null, 2)}</pre>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="comments">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
+                  {pendingComments.map(c => (
+                    <div key={c.id} className="border border-border rounded-lg p-3">
+                      <div className="flex justify-between items-start gap-3 mb-1">
+                        <div>
+                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="real-weddings">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Real Weddings ({realWeddings.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {realWeddings.length === 0 && <p className="text-sm text-muted-foreground">No real weddings yet.</p>}
+                  {realWeddings.map(w => (
+                    <div key={w.id} className="flex justify-between items-center border border-border rounded-lg p-3">
+                      <div>
+                        <p className="font-medium text-foreground">{w.couple_names}</p>
+                        <p className="text-xs text-muted-foreground">{w.location} · <Badge variant={w.status === "approved" ? "default" : "outline"} className="capitalize">{w.status}</Badge></p>
+                      </div>
+                      <Select value={w.status} onValueChange={(v) => toggleRealWeddingStatus(w.id, v)}>
+                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="authors" className="space-y-6">
+              <PromoteAuthorCard onDone={fetchAll} />
               <AuthorApplicationsTab />
             </TabsContent>
+
+            <TabsContent value="mirror">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-4 text-sm">
+                    <span>Pending: <strong>{mediaStats.pending}</strong></span>
+                    <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
+                    <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
+                  </div>
+                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
+                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
+          )}
         </div>
       </main>
     </>
