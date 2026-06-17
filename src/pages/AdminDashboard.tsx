@@ -249,27 +249,63 @@ const AdminDashboard = () => {
       <Header />
       <main className="pt-20 pb-16 bg-background min-h-screen">
         <div className="container mx-auto px-4">
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground text-sm mt-1">Platform overview, payments & management</p>
+            <p className="text-muted-foreground text-sm mt-1">Choose a workspace to manage</p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Wallet className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Admin Wallet</p><p className="text-xl font-bold text-foreground">{walletBalance.toLocaleString()} RWF</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Commission Earned</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Store className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Total Vendors</p><p className="text-xl font-bold text-foreground">{vendors.length}</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Users</p><p className="text-xl font-bold text-foreground">{profiles.length}</p></div></div></CardContent></Card>
-            <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-foreground">{pendingVendors + pendingWithdrawals.length}</p></div></div></CardContent></Card>
+          {/* Workspace switcher */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-8">
+            <button
+              onClick={() => switchMode("marketplace")}
+              className={`text-left p-5 rounded-xl border-2 transition-all ${mode === "marketplace" ? "border-primary bg-primary/5 shadow-md" : "border-border bg-card hover:border-primary/40"}`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Briefcase className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <p className="font-display text-lg font-bold">Haruwa — Wedding Management</p>
+                  <p className="text-xs text-muted-foreground">Vendors, bookings, payments & withdrawals</p>
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => switchMode("editorial")}
+              className={`text-left p-5 rounded-xl border-2 transition-all ${mode === "editorial" ? "border-primary bg-primary/5 shadow-md" : "border-border bg-card hover:border-primary/40"}`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <p className="font-display text-lg font-bold">Afriwedd — Editorial Management</p>
+                  <p className="text-xs text-muted-foreground">Articles, authors, submissions & comments</p>
+                </div>
+              </div>
+            </button>
           </div>
 
+          {/* Stats — contextual */}
+          {mode === "marketplace" ? (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Wallet className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Admin Wallet</p><p className="text-xl font-bold text-foreground">{walletBalance.toLocaleString()} RWF</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><DollarSign className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Commission Earned</p><p className="text-xl font-bold text-foreground">{totalRevenue.toLocaleString()} RWF</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Store className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Total Vendors</p><p className="text-xl font-bold text-foreground">{vendors.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Users className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Total Users</p><p className="text-xl font-bold text-foreground">{profiles.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-foreground">{pendingVendors + pendingWithdrawals.length}</p></div></div></CardContent></Card>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><BookOpen className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Real Weddings</p><p className="text-xl font-bold text-foreground">{realWeddings.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Pending Submissions</p><p className="text-xl font-bold text-foreground">{submissions.filter(s => s.status === "pending").length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending Comments</p><p className="text-xl font-bold text-foreground">{pendingComments.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><ImageIcon className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Images to mirror</p><p className="text-xl font-bold text-foreground">{mediaStats.pending}</p></div></div></CardContent></Card>
+            </div>
+          )}
+
+          {mode === "marketplace" ? (
           <Tabs defaultValue="wallet" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
               <TabsTrigger value="wallet">Wallet & Withdrawals</TabsTrigger>
               <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="ads">Advertisements</TabsTrigger>
-              <TabsTrigger value="editorial">Editorial</TabsTrigger>
-              <TabsTrigger value="authors">Authors</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
