@@ -19,6 +19,37 @@ import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import { useRef } from "react";
 
+const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `blog/featured/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success("Featured image uploaded");
+    } catch (err: any) { toast.error(err.message); } finally { setUploading(false); }
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={value} onChange={e => onChange(e.target.value)} placeholder="https://... or upload below" />
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          <Upload className="w-4 h-4 mr-1" />{uploading ? "Uploading…" : "Upload"}
+        </Button>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={upload} />
+      </div>
+      {value && <img src={value} alt="" className="w-40 h-24 object-cover rounded-md border border-border" />}
+    </div>
+  );
+};
+
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 const AuthorDashboard = () => {
