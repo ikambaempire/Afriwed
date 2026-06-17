@@ -15,7 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { PenLine, Eye, Trash2, Plus, ExternalLink } from "lucide-react";
+import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import { useRef } from "react";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -198,9 +200,16 @@ const AuthorDashboard = () => {
             <div className="space-y-4">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
               <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
-              <div><Label>Featured image URL</Label><Input value={form.featured_image_url} onChange={e => setForm({ ...form, featured_image_url: e.target.value })} placeholder="https://..." /></div>
+              <div>
+                <Label>Featured image</Label>
+                <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
+              </div>
               <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
-              <div><Label>Content (HTML supported)</Label><Textarea value={form.content_html} onChange={e => setForm({ ...form, content_html: e.target.value })} rows={14} className="font-mono text-sm" /></div>
+              <div>
+                <Label>Content</Label>
+                <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
+                <p className="text-xs text-muted-foreground mt-1">Use the toolbar to add images from your device, links, headings and quotes anywhere in the article.</p>
+              </div>
               <div><Label>Status</Label>
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
