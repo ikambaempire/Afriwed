@@ -1,10 +1,69 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/hooks/useLanguage";
+
+type CatCount = { id: string; slug: string; name: string; count: number };
+
+const CategoryCounts = () => {
+  const [cats, setCats] = useState<CatCount[]>([]);
+  const [total, setTotal] = useState(0);
+  const { lang } = useLanguage();
+
+  useEffect(() => {
+    (async () => {
+      const { data: c } = await supabase.from("blog_categories").select("id, slug, name");
+      const { data: posts } = await supabase
+        .from("blog_posts")
+        .select("id, blog_post_categories(category_id)")
+        .eq("status", "publish")
+        .eq("language", lang);
+      const tally: Record<string, number> = {};
+      (posts ?? []).forEach((p: any) => {
+        (p.blog_post_categories ?? []).forEach((r: any) => {
+          tally[r.category_id] = (tally[r.category_id] || 0) + 1;
+        });
+      });
+      const rows = (c ?? []).map(x => ({ ...x, count: tally[x.id] || 0 }))
+        .filter(x => x.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 12);
+      setCats(rows);
+      setTotal((posts ?? []).length);
+    })();
+  }, [lang]);
+
+  if (cats.length === 0) return null;
+  return (
+    <div className="border-t border-primary-foreground/10">
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-1">Browse the archive</p>
+            <h4 className="font-display text-2xl font-bold">{total.toLocaleString()} stories {lang === "rw" ? "in Kinyarwanda" : "in English"}</h4>
+          </div>
+          <Link to="/stories" className="text-xs text-primary-foreground/60 hover:text-primary transition-colors">View all categories →</Link>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {cats.map(c => (
+            <Link key={c.id} to={`/stories?category=${c.slug}`} className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary-foreground/15 text-sm text-primary-foreground/80 hover:border-primary hover:text-primary transition-colors">
+              <span>{c.name}</span>
+              <span className="text-xs text-primary-foreground/40 group-hover:text-primary">{c.count}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Footer = () => (
   <footer className="bg-foreground text-primary-foreground">
+    <CategoryCounts />
+
     {/* Newsletter band */}
     <div className="border-b border-primary-foreground/10">
       <div className="container mx-auto px-4 py-12 md:py-16 grid md:grid-cols-2 gap-8 items-center">

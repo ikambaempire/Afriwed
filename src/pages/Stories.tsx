@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Search, Calendar, User } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 type Post = {
   id: string; slug: string; title: string; excerpt: string;
@@ -17,6 +18,7 @@ type Cat = { id: string; slug: string; name: string };
 
 const Stories = () => {
   const [params, setParams] = useSearchParams();
+  const { lang } = useLanguage();
   const activeCat = params.get("category") || "all";
   const q = params.get("q") || "";
   const [posts, setPosts] = useState<Post[]>([]);
@@ -43,6 +45,7 @@ const Stories = () => {
       let query = supabase.from("blog_posts")
         .select("id, slug, title, excerpt, featured_image_url, published_at, author:blog_authors(display_name)")
         .eq("status", "publish")
+        .eq("language", lang)
         .order("published_at", { ascending: false })
         .limit(60);
       if (postIds) query = query.in("id", postIds.length ? postIds : ["00000000-0000-0000-0000-000000000000"]);
@@ -53,7 +56,7 @@ const Stories = () => {
       setPosts(list.slice(1));
       setLoading(false);
     })();
-  }, [activeCat, q]);
+  }, [activeCat, q, lang]);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
