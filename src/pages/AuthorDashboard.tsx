@@ -58,7 +58,7 @@ const AuthorDashboard = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft" });
+  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
   const [profileForm, setProfileForm] = useState({ display_name: "", bio: "", avatar_url: "" });
 
   const allowed = isAuthor || isAdmin;
@@ -94,12 +94,12 @@ const AuthorDashboard = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft" });
+    setForm({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
     setOpen(true);
   };
   const openEdit = (p: any) => {
     setEditing(p);
-    setForm({ title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "", featured_image_url: p.featured_image_url || "", status: p.status });
+    setForm({ title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "", featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en" });
     setOpen(true);
   };
 
@@ -109,6 +109,7 @@ const AuthorDashboard = () => {
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: form.content_html,
       featured_image_url: form.featured_image_url || null, status: form.status,
+      language: form.language,
       author_id: authorId,
     };
     if (form.status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
@@ -241,14 +242,26 @@ const AuthorDashboard = () => {
                 <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
                 <p className="text-xs text-muted-foreground mt-1">Use the toolbar to add images from your device, links, headings and quotes anywhere in the article.</p>
               </div>
-              <div><Label>Status</Label>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="publish">Published</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Language *</Label>
+                  <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="rw">Kinyarwanda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
+                </div>
+                <div><Label>Status</Label>
+                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="publish">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
