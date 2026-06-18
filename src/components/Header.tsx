@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine } from "lucide-react";
+import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine, Languages } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAdmin, isVendor, isAuthor, signOut } = useAuth();
+  const { lang, setLang } = useLanguage();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -56,6 +58,10 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
+            <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
+            <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
+          </div>
           {user ? (
             <>
               <span className="text-sm text-muted-foreground">{user.email}</span>
@@ -82,6 +88,13 @@ const Header = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden bg-card border-b border-border px-4 pb-4 animate-fade-in">
+          <div className="flex items-center justify-between py-3 border-b border-border">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1"><Languages className="w-3.5 h-3.5" />Language</span>
+            <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium">
+              <button onClick={() => setLang("en")} className={`px-3 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
+              <button onClick={() => setLang("rw")} className={`px-3 py-1 ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>RW</button>
+            </div>
+          </div>
           <nav className="flex flex-col gap-3 py-3">
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               Find Vendors
