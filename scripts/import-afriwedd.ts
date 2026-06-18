@@ -41,13 +41,15 @@ async function ensureAuthor(wpA: any): Promise<string | null> {
 let inserted = 0, skipped = 0, fetched = 0;
 const newImages = new Set<string>();
 
+import { readFileSync, writeFileSync } from "fs";
+const TMP = "/tmp/wp-import.json";
 for (let page = 1; page <= 30; page++) {
   const url = `${WP}/posts?per_page=30&page=${page}&_embed=author,wp:featuredmedia&orderby=date&order=desc`;
-  const r = spawnSync("curl", ["-sS", "--compressed", url], { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
+  const r = spawnSync("curl", ["-sS", "--compressed", "-o", TMP, url], { encoding: "utf8" });
   if (r.status !== 0) { console.warn("page", page, "curl failed", r.stderr); break; }
-  const text = r.stdout;
+  const text = readFileSync(TMP, "utf8");
   let posts: any[];
-  try { posts = JSON.parse(text); } catch { console.warn("page", page, "not JSON:", text.slice(0, 120)); break; }
+  try { posts = JSON.parse(text); } catch { console.warn("page", page, "not JSON:", text.slice(0, 200)); break; }
   if (!posts.length) break;
   fetched += posts.length;
 
