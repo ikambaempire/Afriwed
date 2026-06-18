@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 type Post = {
   id: string; slug: string; title: string; excerpt: string | null;
@@ -11,15 +12,17 @@ type Post = {
 
 const StoriesPreview = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { lang } = useLanguage();
 
   useEffect(() => {
     supabase.from("blog_posts")
       .select("id, slug, title, excerpt, featured_image_url, published_at")
       .eq("status", "publish")
+      .eq("language", lang)
       .order("published_at", { ascending: false })
       .limit(4)
       .then(({ data }) => setPosts((data ?? []) as Post[]));
-  }, []);
+  }, [lang]);
 
   if (posts.length === 0) return null;
   const [hero, ...rest] = posts;
