@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import heroImage from "@/assets/hero-wedding.jpg";
 
 const HeroSection = () => (
-  <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+  <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
     <div className="absolute inset-0">
       <img src={heroImage} alt="African wedding storytelling" className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-hero" />
@@ -23,18 +23,9 @@ const HeroSection = () => (
         <p className="text-primary-foreground/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
           Read, publish and celebrate African weddings. A modern editorial home for couples, creators and the vendors who bring it all to life.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-          <Button asChild size="lg" className="text-base px-8 py-6 rounded-full bg-foreground text-background hover:bg-foreground/90">
-            <Link to="/stories">Read Stories</Link>
-          </Button>
-          <Button asChild variant="hero-outline" size="lg" className="text-base px-8 py-6 rounded-full">
-            <Link to="/real-weddings">Real Weddings</Link>
-          </Button>
-          <Button asChild size="lg" className="text-base px-8 py-6 rounded-full bg-gold text-foreground hover:opacity-90 font-semibold">
-            <Link to="/author-apply">Become an Author</Link>
-          </Button>
-          <Button asChild variant="hero-outline" size="lg" className="text-base px-8 py-6 rounded-full">
-            <Link to="/vendors">Find Vendors</Link>
+        <div className="flex justify-center">
+          <Button asChild size="lg" className="text-base px-10 py-6 rounded-full bg-foreground text-background hover:bg-foreground/90">
+            <Link to="/stories">Read the latest stories</Link>
           </Button>
         </div>
       </motion.div>
