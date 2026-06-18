@@ -43,9 +43,9 @@ const newImages = new Set<string>();
 
 for (let page = 1; page <= 30; page++) {
   const url = `${WP}/posts?per_page=30&page=${page}&_embed=author,wp:featuredmedia&orderby=date&order=desc`;
-  const res = await fetch(url, { headers: { "User-Agent": "curl/8.0", Accept: "application/json" } });
-  if (!res.ok) { console.warn("page", page, res.status); break; }
-  const text = await res.text();
+  const r = spawnSync("curl", ["-sS", "--compressed", url], { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
+  if (r.status !== 0) { console.warn("page", page, "curl failed", r.stderr); break; }
+  const text = r.stdout;
   let posts: any[];
   try { posts = JSON.parse(text); } catch { console.warn("page", page, "not JSON:", text.slice(0, 120)); break; }
   if (!posts.length) break;
