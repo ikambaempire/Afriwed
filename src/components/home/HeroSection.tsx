@@ -23,9 +23,12 @@ const HeroSection = () => (
         <p className="text-primary-foreground/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
           Read, publish and celebrate African weddings. A modern editorial home for couples, creators and the vendors who bring it all to life.
         </p>
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button asChild size="lg" className="text-base px-10 py-6 rounded-full bg-foreground text-background hover:bg-foreground/90">
             <Link to="/stories">Read the latest stories</Link>
+          </Button>
+          <Button asChild size="lg" variant="hero-outline" className="text-base px-10 py-6 rounded-full">
+            <Link to="/real-weddings">Explore Real Weddings</Link>
           </Button>
         </div>
       </motion.div>
