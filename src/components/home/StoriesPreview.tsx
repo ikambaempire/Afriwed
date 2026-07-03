@@ -6,6 +6,7 @@ import { ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
 type Post = {
   id: string; slug: string; title: string; excerpt: string | null;
@@ -45,6 +46,11 @@ const CardSkeleton = () => (
     <Skeleton className="h-3 w-1/3" />
   </div>
 );
+
+const useStoryFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = storyFallbackImage;
+};
 
 const StoriesPreview = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -148,7 +154,7 @@ const StoriesPreview = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Link to={`/stories/${hero.slug}`} className="group block">
               <div className="aspect-[4/3] overflow-hidden rounded-2xl mb-5 bg-muted">
-                <img src={hero.featured_image_url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=900"} alt={hero.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
+                <img src={hero.featured_image_url || storyFallbackImage} onError={useStoryFallback} alt={hero.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
               </div>
               <h3 className="font-display text-2xl md:text-3xl font-bold leading-tight mb-3 group-hover:text-primary transition-colors">{hero.title}</h3>
               <p className="text-muted-foreground line-clamp-3" dangerouslySetInnerHTML={{ __html: (hero.excerpt || "").slice(0, 220) }} />
@@ -160,7 +166,7 @@ const StoriesPreview = () => {
               <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i, duration: 0.35 }}>
                 <Link to={`/stories/${p.slug}`} className="group flex gap-4">
                   <div className="w-32 h-24 sm:w-40 sm:h-28 overflow-hidden rounded-lg bg-muted shrink-0">
-                    <img src={p.featured_image_url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=400"} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                    <img src={p.featured_image_url || storyFallbackImage} onError={useStoryFallback} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-display text-base md:text-lg font-semibold leading-snug line-clamp-3 group-hover:text-primary transition-colors">{p.title}</h3>
@@ -183,7 +189,7 @@ const StoriesPreview = () => {
               >
                 <Link to={`/stories/${p.slug}`} className="group block">
                   <div className="aspect-[4/3] overflow-hidden rounded-xl mb-3 bg-muted">
-                    <img src={p.featured_image_url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=500"} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <img src={p.featured_image_url || storyFallbackImage} onError={useStoryFallback} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
                   <h3 className="font-display text-base font-semibold leading-snug group-hover:text-primary transition-colors line-clamp-2">{p.title}</h3>
                   {p.published_at && <p className="text-xs text-muted-foreground mt-1">{new Date(p.published_at).toLocaleDateString()}</p>}
