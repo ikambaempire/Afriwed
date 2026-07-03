@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import {
-  Users, Store, DollarSign, TrendingUp, CheckCircle, XCircle,
+  Users, Store, DollarSign, CheckCircle, XCircle,
   ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon,
-  Wallet, ArrowDownRight, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload
+  Wallet, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
