@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,7 @@ const CardSkeleton = () => (
   </div>
 );
 
-const useStoryFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+const useStoryFallback = (event: SyntheticEvent<HTMLImageElement>) => {
   event.currentTarget.onerror = null;
   event.currentTarget.src = storyFallbackImage;
 };

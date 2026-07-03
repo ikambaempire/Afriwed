@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, Navigate } from "react-router-dom";
@@ -28,7 +28,7 @@ const StoryImageInput = ({ value, onChange }: { value: string; onChange: (url: s
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;

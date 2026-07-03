@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -12,7 +12,7 @@ type Post = {
   author: { display_name: string; slug: string | null } | null;
 };
 
-const useStoryFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+const useStoryFallback = (event: SyntheticEvent<HTMLImageElement>) => {
   event.currentTarget.onerror = null;
   event.currentTarget.src = storyFallbackImage;
 };
