@@ -144,7 +144,7 @@ const AdminDashboard = () => {
   const runMirror = async () => {
     setMirroring(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 25 } });
+      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 50, chunk: 10, background: false } });
       if (error) throw error;
       toast({ title: "Image mirror batch done", description: `Succeeded ${data?.succeeded ?? 0} · Failed ${data?.failed ?? 0} · ${data?.remaining ?? 0} remaining` });
       fetchAll();
@@ -152,6 +152,34 @@ const AdminDashboard = () => {
       toast({ title: "Mirror failed", description: e.message, variant: "destructive" });
     } finally {
       setMirroring(false);
+    }
+  };
+
+  const runImport = async () => {
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("import-wp-posts", { body: { perPage: 50, maxPages: 40 } });
+      if (error) throw error;
+      toast({ title: "Import complete", description: `Inserted ${data?.inserted ?? 0} · Skipped ${data?.skipped ?? 0} · Queued ${data?.queuedImages ?? 0} images` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const retryErrored = async () => {
+    setRetrying(true);
+    try {
+      const { error, count } = await supabase.from("blog_media_assets").update({ status: "pending", error: null }, { count: "exact" }).eq("status", "error");
+      if (error) throw error;
+      toast({ title: "Retry queued", description: `${count ?? 0} assets re-queued` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Retry failed", description: e.message, variant: "destructive" });
+    } finally {
+      setRetrying(false);
     }
   };
 
