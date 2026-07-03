@@ -972,6 +972,69 @@ const AdminDashboard = () => {
             </TabsContent>
           </Tabs>
           )}
+
+          <Dialog open={storyEditorOpen} onOpenChange={setStoryEditorOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit story</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Title</Label>
+                    <Input value={storyForm.title} onChange={(event) => setStoryForm({ ...storyForm, title: event.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>URL slug</Label>
+                    <Input value={storyForm.slug} onChange={(event) => setStoryForm({ ...storyForm, slug: slugify(event.target.value) })} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Featured image</Label>
+                  <StoryImageInput value={storyForm.featured_image_url} onChange={(url) => setStoryForm({ ...storyForm, featured_image_url: url })} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Excerpt</Label>
+                  <Textarea value={storyForm.excerpt} onChange={(event) => setStoryForm({ ...storyForm, excerpt: event.target.value })} rows={2} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Content</Label>
+                  <RichTextEditor key={editingStory?.id || "admin-story"} value={storyForm.content_html} onChange={(html) => setStoryForm((current) => ({ ...current, content_html: html }))} />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Language</Label>
+                    <Select value={storyForm.language} onValueChange={(value) => setStoryForm({ ...storyForm, language: value })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="rw">Kinyarwanda</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={storyForm.status} onValueChange={(value) => setStoryForm({ ...storyForm, status: value })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="publish">Published</SelectItem>
+                        <SelectItem value="draft">Hidden / Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setStoryEditorOpen(false)}>Cancel</Button>
+                  <Button onClick={saveStory} disabled={storySaving}>{storySaving ? "Saving..." : "Save story"}</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     </>
