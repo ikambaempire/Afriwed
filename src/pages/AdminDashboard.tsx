@@ -52,6 +52,8 @@ const AdminDashboard = () => {
   const [pendingComments, setPendingComments] = useState<any[]>([]);
   const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
   const [mirroring, setMirroring] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchAll();
