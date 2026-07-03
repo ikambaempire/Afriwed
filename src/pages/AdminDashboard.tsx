@@ -738,19 +738,33 @@ const AdminDashboard = () => {
               <AuthorApplicationsTab />
             </TabsContent>
 
-            <TabsContent value="mirror">
+            <TabsContent value="mirror" className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Import stories from afriwedd.com</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <Button onClick={runImport} disabled={importing}>
+                    {importing ? "Importing..." : "Import missing stories"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Fetches every published post from afriwedd.com, inserts any that are missing, and queues their images for mirroring.</p>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex gap-4 text-sm flex-wrap">
                     <span>Pending: <strong>{mediaStats.pending}</strong></span>
                     <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
                     <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
                   </div>
-                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
-                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button onClick={runMirror} disabled={mirroring}>
+                      {mirroring ? "Mirroring..." : mediaStats.pending === 0 ? "Run mirror (nothing pending)" : `Mirror next 50 images`}
+                    </Button>
+                    <Button variant="outline" onClick={retryErrored} disabled={retrying || mediaStats.error === 0}>
+                      {retrying ? "Requeuing..." : `Retry ${mediaStats.error} errored`}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts. Retry sends errored assets back to the queue.</p>
                 </CardContent>
               </Card>
             </TabsContent>
