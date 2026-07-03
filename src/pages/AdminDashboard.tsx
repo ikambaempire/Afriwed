@@ -52,6 +52,8 @@ const AdminDashboard = () => {
   const [pendingComments, setPendingComments] = useState<any[]>([]);
   const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
   const [mirroring, setMirroring] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchAll();
@@ -142,7 +144,7 @@ const AdminDashboard = () => {
   const runMirror = async () => {
     setMirroring(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 25 } });
+      const { data, error } = await supabase.functions.invoke("mirror-wp-images", { body: { batch: 50, chunk: 10, background: false } });
       if (error) throw error;
       toast({ title: "Image mirror batch done", description: `Succeeded ${data?.succeeded ?? 0} · Failed ${data?.failed ?? 0} · ${data?.remaining ?? 0} remaining` });
       fetchAll();
@@ -150,6 +152,34 @@ const AdminDashboard = () => {
       toast({ title: "Mirror failed", description: e.message, variant: "destructive" });
     } finally {
       setMirroring(false);
+    }
+  };
+
+  const runImport = async () => {
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("import-wp-posts", { body: { perPage: 50, maxPages: 40 } });
+      if (error) throw error;
+      toast({ title: "Import complete", description: `Inserted ${data?.inserted ?? 0} · Skipped ${data?.skipped ?? 0} · Queued ${data?.queuedImages ?? 0} images` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Import failed", description: e.message, variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const retryErrored = async () => {
+    setRetrying(true);
+    try {
+      const { error, count } = await supabase.from("blog_media_assets").update({ status: "pending", error: null }, { count: "exact" }).eq("status", "error");
+      if (error) throw error;
+      toast({ title: "Retry queued", description: `${count ?? 0} assets re-queued` });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Retry failed", description: e.message, variant: "destructive" });
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -708,19 +738,33 @@ const AdminDashboard = () => {
               <AuthorApplicationsTab />
             </TabsContent>
 
-            <TabsContent value="mirror">
+            <TabsContent value="mirror" className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-lg">Import stories from afriwedd.com</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <Button onClick={runImport} disabled={importing}>
+                    {importing ? "Importing..." : "Import missing stories"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Fetches every published post from afriwedd.com, inserts any that are missing, and queues their images for mirroring.</p>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader><CardTitle className="text-lg">WordPress Image Mirror</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex gap-4 text-sm flex-wrap">
                     <span>Pending: <strong>{mediaStats.pending}</strong></span>
                     <span className="text-green-600">Done: <strong>{mediaStats.done}</strong></span>
                     <span className="text-destructive">Errors: <strong>{mediaStats.error}</strong></span>
                   </div>
-                  <Button onClick={runMirror} disabled={mirroring || mediaStats.pending === 0}>
-                    {mirroring ? "Mirroring..." : `Mirror next 25 images`}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts.</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button onClick={runMirror} disabled={mirroring}>
+                      {mirroring ? "Mirroring..." : mediaStats.pending === 0 ? "Run mirror (nothing pending)" : `Mirror next 50 images`}
+                    </Button>
+                    <Button variant="outline" onClick={retryErrored} disabled={retrying || mediaStats.error === 0}>
+                      {retrying ? "Requeuing..." : `Retry ${mediaStats.error} errored`}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Downloads original afriwedd.com images, re-hosts to Cloud storage, and rewrites posts. Retry sends errored assets back to the queue.</p>
                 </CardContent>
               </Card>
             </TabsContent>
