@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,16 +10,64 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import {
   Users, Store, DollarSign, TrendingUp, CheckCircle, XCircle,
   ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon,
-  Wallet, ArrowDownRight, ArrowUpRight
+  Wallet, ArrowDownRight, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
 import { BookOpen, Briefcase } from "lucide-react";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
+
+const StoryImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `blog/featured/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast({ title: "Featured image uploaded" });
+    } catch (error: any) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder="Image URL or upload from device" />
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={uploadingImage}>
+          <Upload className="w-4 h-4 mr-1" />{uploadingImage ? "Uploading..." : "Upload"}
+        </Button>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={uploadImage} />
+      </div>
+      {value && (
+        <img
+          src={value}
+          alt="Story image preview"
+          className="w-44 h-28 object-cover rounded-md border border-border"
+          onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = storyFallbackImage; }}
+        />
+      )}
+    </div>
+  );
+};
 
 const AdminDashboard = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -50,6 +98,16 @@ const AdminDashboard = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [realWeddings, setRealWeddings] = useState<any[]>([]);
   const [pendingComments, setPendingComments] = useState<any[]>([]);
+  const [stories, setStories] = useState<any[]>([]);
+  const [storySearch, setStorySearch] = useState("");
+  const [storyStatusFilter, setStoryStatusFilter] = useState("all");
+  const [storyLanguageFilter, setStoryLanguageFilter] = useState("all");
+  const [storyEditorOpen, setStoryEditorOpen] = useState(false);
+  const [editingStory, setEditingStory] = useState<any>(null);
+  const [storySaving, setStorySaving] = useState(false);
+  const [storyForm, setStoryForm] = useState({
+    title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+  });
   const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
   const [mirroring, setMirroring] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -75,10 +133,11 @@ const AdminDashboard = () => {
     setAds(aRes.data ?? []);
     setWithdrawals(wRes.data ?? []);
 
-    const [sRes, rwRes, cmRes, mPend, mDone, mErr] = await Promise.all([
+    const [sRes, rwRes, cmRes, storyRes, mPend, mDone, mErr] = await Promise.all([
       supabase.from("submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("real_weddings").select("*").order("created_at", { ascending: false }),
       supabase.from("blog_comments").select("*, blog_posts(title, slug)").eq("approved", false).order("created_at", { ascending: false }).limit(50),
+      supabase.from("blog_posts").select("*, author:blog_authors(display_name)").order("published_at", { ascending: false, nullsFirst: false }).order("updated_at", { ascending: false }).limit(1000),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "done"),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "error"),
@@ -86,6 +145,7 @@ const AdminDashboard = () => {
     setSubmissions(sRes.data ?? []);
     setRealWeddings(rwRes.data ?? []);
     setPendingComments(cmRes.data ?? []);
+    setStories(storyRes.data ?? []);
     setMediaStats({ pending: mPend.count ?? 0, done: mDone.count ?? 0, error: mErr.count ?? 0 });
   };
 
@@ -133,6 +193,67 @@ const AdminDashboard = () => {
   const deleteComment = async (id: string) => {
     await supabase.from("blog_comments").delete().eq("id", id);
     toast({ title: "Comment deleted" });
+    fetchAll();
+  };
+
+  const openStoryEditor = (story: any) => {
+    setEditingStory(story);
+    setStoryForm({
+      title: story.title || "",
+      slug: story.slug || "",
+      excerpt: story.excerpt || "",
+      content_html: story.content_html || "",
+      featured_image_url: story.featured_image_url || "",
+      status: story.status || "draft",
+      language: story.language || "en",
+    });
+    setStoryEditorOpen(true);
+  };
+
+  const saveStory = async () => {
+    if (!editingStory || !storyForm.title.trim()) {
+      toast({ title: "Story title is required", variant: "destructive" });
+      return;
+    }
+    setStorySaving(true);
+    try {
+      const nextStatus = storyForm.status;
+      const payload: any = {
+        title: storyForm.title.trim(),
+        slug: storyForm.slug.trim() || slugify(storyForm.title),
+        excerpt: storyForm.excerpt,
+        content_html: storyForm.content_html,
+        featured_image_url: storyForm.featured_image_url || null,
+        status: nextStatus,
+        language: storyForm.language,
+      };
+      if (nextStatus === "publish" && !editingStory.published_at) payload.published_at = new Date().toISOString();
+      const { error } = await supabase.from("blog_posts").update(payload).eq("id", editingStory.id);
+      if (error) throw error;
+      toast({ title: "Story updated" });
+      setStoryEditorOpen(false);
+      fetchAll();
+    } catch (error: any) {
+      toast({ title: "Story update failed", description: error.message, variant: "destructive" });
+    } finally {
+      setStorySaving(false);
+    }
+  };
+
+  const updateStoryStatus = async (story: any, status: "draft" | "publish") => {
+    const payload: any = { status };
+    if (status === "publish" && !story.published_at) payload.published_at = new Date().toISOString();
+    const { error } = await supabase.from("blog_posts").update(payload).eq("id", story.id);
+    if (error) return toast({ title: "Status change failed", description: error.message, variant: "destructive" });
+    toast({ title: status === "publish" ? "Story published" : "Story hidden" });
+    fetchAll();
+  };
+
+  const deleteStory = async (story: any) => {
+    if (!confirm(`Delete “${story.title}”? This cannot be undone.`)) return;
+    const { error } = await supabase.from("blog_posts").delete().eq("id", story.id);
+    if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    toast({ title: "Story deleted" });
     fetchAll();
   };
 
@@ -273,6 +394,13 @@ const AdminDashboard = () => {
   const walletBalance = totalDeposits - totalPaidOut;
   const pendingVendors = vendors.filter(v => !v.is_approved).length;
   const pendingWithdrawals = withdrawals.filter(w => w.status === "pending");
+  const filteredStories = stories.filter((story) => {
+    const q = storySearch.trim().toLowerCase();
+    const matchesSearch = !q || `${story.title || ""} ${story.slug || ""}`.toLowerCase().includes(q);
+    const matchesStatus = storyStatusFilter === "all" || story.status === storyStatusFilter;
+    const matchesLanguage = storyLanguageFilter === "all" || (story.language || "en") === storyLanguageFilter;
+    return matchesSearch && matchesStatus && matchesLanguage;
+  });
 
   return (
     <>
@@ -323,7 +451,7 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><BookOpen className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Real Weddings</p><p className="text-xl font-bold text-foreground">{realWeddings.length}</p></div></div></CardContent></Card>
+              <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><BookOpen className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Published Stories</p><p className="text-xl font-bold text-foreground">{stories.filter(s => s.status === "publish").length}</p></div></div></CardContent></Card>
               <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-accent" /><div><p className="text-xs text-muted-foreground">Pending Submissions</p><p className="text-xl font-bold text-foreground">{submissions.filter(s => s.status === "pending").length}</p></div></div></CardContent></Card>
               <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-destructive" /><div><p className="text-xs text-muted-foreground">Pending Comments</p><p className="text-xl font-bold text-foreground">{pendingComments.length}</p></div></div></CardContent></Card>
               <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><ImageIcon className="w-8 h-8 text-primary" /><div><p className="text-xs text-muted-foreground">Images to mirror</p><p className="text-xl font-bold text-foreground">{mediaStats.pending}</p></div></div></CardContent></Card>
@@ -651,14 +779,88 @@ const AdminDashboard = () => {
 
           </Tabs>
           ) : (
-          <Tabs defaultValue="submissions" className="space-y-6">
+          <Tabs defaultValue="stories" className="space-y-6">
             <TabsList className="flex-wrap h-auto gap-1">
+              <TabsTrigger value="stories">Stories</TabsTrigger>
               <TabsTrigger value="submissions">Submissions</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="real-weddings">Real Weddings</TabsTrigger>
               <TabsTrigger value="authors">Authors</TabsTrigger>
               <TabsTrigger value="mirror">Image Mirror</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="stories" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">All Stories ({filteredStories.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-[1fr_180px_180px] gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input value={storySearch} onChange={(event) => setStorySearch(event.target.value)} placeholder="Search by title or slug" className="pl-9" />
+                    </div>
+                    <Select value={storyStatusFilter} onValueChange={setStoryStatusFilter}>
+                      <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="publish">Published</SelectItem>
+                        <SelectItem value="draft">Hidden / Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={storyLanguageFilter} onValueChange={setStoryLanguageFilter}>
+                      <SelectTrigger><SelectValue placeholder="Language" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All languages</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="rw">Kinyarwanda</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                    {filteredStories.map((story) => (
+                      <div key={story.id} className="p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 bg-card">
+                        <div className="w-full md:w-24 aspect-[4/3] rounded-md overflow-hidden bg-muted shrink-0">
+                          <img
+                            src={story.featured_image_url || storyFallbackImage}
+                            alt={story.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = storyFallbackImage; }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-foreground line-clamp-1">{story.title}</h3>
+                            <Badge variant={story.status === "publish" ? "default" : "secondary"}>{story.status === "publish" ? "Published" : "Hidden"}</Badge>
+                            <Badge variant="outline">{(story.language || "en") === "rw" ? "Kinyarwanda" : "English"}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {story.author?.display_name || "No author"} · {story.published_at ? new Date(story.published_at).toLocaleDateString() : "Not published"} · /{story.slug}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap md:justify-end">
+                          {story.status === "publish" && (
+                            <Button size="sm" variant="outline" asChild>
+                              <Link to={`/stories/${story.slug}`} target="_blank"><ExternalLink className="w-4 h-4 mr-1" />View</Link>
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => openStoryEditor(story)}><PenLine className="w-4 h-4 mr-1" />Edit</Button>
+                          {story.status === "publish" ? (
+                            <Button size="sm" variant="outline" onClick={() => updateStoryStatus(story, "draft")}><EyeOff className="w-4 h-4 mr-1" />Hide</Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => updateStoryStatus(story, "publish")}><Eye className="w-4 h-4 mr-1" />Publish</Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteStory(story)}><Trash2 className="w-4 h-4 mr-1" />Delete</Button>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredStories.length === 0 && <p className="text-center py-10 text-sm text-muted-foreground">No stories match these filters.</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="submissions" className="space-y-4">
               <Card>
