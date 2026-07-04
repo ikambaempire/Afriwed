@@ -403,7 +403,7 @@ const Messages = () => {
                 <div className="flex-1 flex items-center justify-center text-center p-8">
                   <div>
                     <MessageCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-2">Welcome to Haruwa Chat</h3>
+                    <h3 className="font-display text-lg font-semibold text-foreground mb-2">Welcome to Afriwedd Chat</h3>
                     <p className="text-sm text-muted-foreground">Select a conversation or start a new chat with your vendors</p>
                   </div>
                 </div>

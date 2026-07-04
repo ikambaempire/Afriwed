@@ -68,7 +68,7 @@ const Stories = () => {
   return (
     <>
       <Helmet>
-        <title>Stories & Editorial — Afriwedd | Haruwa</title>
+        <title>Stories & Editorial — Afriwedd | Afriwedd</title>
         <meta name="description" content="Real African wedding stories, cultural inspiration, planning guides, and editorial coverage from across the continent." />
         <link rel="canonical" href="https://haruwa1.lovable.app/stories" />
         <meta property="og:url" content="https://haruwa1.lovable.app/stories" />

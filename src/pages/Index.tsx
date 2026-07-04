@@ -21,7 +21,7 @@ const MarketplaceStrip = () => (
       </div>
       <div className="flex gap-3">
         <Button asChild variant="outline" className="rounded-full"><Link to="/vendors">Browse Vendors</Link></Button>
-        <Button asChild className="rounded-full"><Link to="/planning">Plan with Haruwa <ArrowRight className="w-4 h-4 ml-1" /></Link></Button>
+        <Button asChild className="rounded-full"><Link to="/planning">Plan with Afriwedd <ArrowRight className="w-4 h-4 ml-1" /></Link></Button>
       </div>
     </div>
   </section>
