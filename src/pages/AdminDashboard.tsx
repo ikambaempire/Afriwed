@@ -307,6 +307,46 @@ const AdminDashboard = () => {
     }
   };
 
+  const toggleStorySelected = (id: string) => {
+    setSelectedStoryIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const runBulk = async (label: string, patch: any) => {
+    if (selectedStoryIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selectedStoryIds);
+      if (patch.status === "publish") patch.published_at = new Date().toISOString();
+      const { error } = await supabase.from("blog_posts").update(patch).in("id", ids);
+      if (error) throw error;
+      toast({ title: `${label} · ${ids.length} stories` });
+      setSelectedStoryIds(new Set());
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Bulk update failed", description: e.message, variant: "destructive" });
+    } finally { setBulkBusy(false); }
+  };
+  const bulkDelete = async () => {
+    if (selectedStoryIds.size === 0) return;
+    if (!confirm(`Delete ${selectedStoryIds.size} stories? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selectedStoryIds);
+      const { error } = await supabase.from("blog_posts").delete().in("id", ids);
+      if (error) throw error;
+      toast({ title: `Deleted ${ids.length} stories` });
+      setSelectedStoryIds(new Set());
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Bulk delete failed", description: e.message, variant: "destructive" });
+    } finally { setBulkBusy(false); }
+  };
+
+
+
 
   const approveVendor = async (id: string, approved: boolean) => {
     await supabase.from("vendors").update({ is_approved: approved }).eq("id", id);
