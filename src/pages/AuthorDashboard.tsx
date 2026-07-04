@@ -237,10 +237,44 @@ const AuthorDashboard = () => {
             <TabsContent value="profile">
               <Card>
                 <CardHeader><CardTitle className="text-base">Public Author Profile</CardTitle></CardHeader>
-                <CardContent className="space-y-4 max-w-xl">
+                <CardContent className="space-y-5 max-w-2xl">
+                  <div>
+                    <Label>Profile picture</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="w-20 h-20 rounded-full overflow-hidden bg-muted border border-border shrink-0">
+                        {profileForm.avatar_url
+                          ? <img src={profileForm.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xl">{profileForm.display_name?.charAt(0) || "?"}</div>}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}>
+                          <Upload className="w-4 h-4 mr-1" />{avatarUploading ? "Uploading…" : "Upload from device"}
+                        </Button>
+                        <input ref={avatarInputRef} type="file" accept="image/*" hidden onChange={uploadAvatar} />
+                        {profileForm.avatar_url && <button type="button" onClick={() => setProfileForm(f => ({ ...f, avatar_url: "" }))} className="text-xs text-muted-foreground hover:text-destructive text-left">Remove picture</button>}
+                      </div>
+                    </div>
+                  </div>
                   <div><Label>Display name</Label><Input value={profileForm.display_name} onChange={e => setProfileForm({ ...profileForm, display_name: e.target.value })} /></div>
                   <div><Label>Bio</Label><Textarea value={profileForm.bio} onChange={e => setProfileForm({ ...profileForm, bio: e.target.value })} rows={5} /></div>
-                  <div><Label>Avatar URL</Label><Input value={profileForm.avatar_url} onChange={e => setProfileForm({ ...profileForm, avatar_url: e.target.value })} placeholder="https://..." /></div>
+
+                  <div>
+                    <Label>Social links</Label>
+                    <p className="text-xs text-muted-foreground mb-3">Paste full URLs. Empty fields are hidden on your public profile.</p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {(["instagram","twitter","facebook","tiktok","youtube","website"] as const).map((k) => (
+                        <div key={k}>
+                          <Label className="capitalize text-xs">{k}</Label>
+                          <Input
+                            value={profileForm.social_links[k] || ""}
+                            onChange={e => setProfileForm(f => ({ ...f, social_links: { ...f.social_links, [k]: e.target.value } }))}
+                            placeholder={k === "website" ? "https://yoursite.com" : `https://${k}.com/yourhandle`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <Button onClick={saveProfile}>Save profile</Button>
                 </CardContent>
               </Card>
