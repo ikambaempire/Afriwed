@@ -87,7 +87,13 @@ const AuthorDashboard = () => {
   const refresh = async () => {
     const { data: a } = await (supabase as any).from("blog_authors").select("*").eq("id", authorId).maybeSingle();
     setAuthorProfile(a);
-    if (a) setProfileForm({ display_name: a.display_name || "", bio: a.bio || "", avatar_url: a.avatar_url || "" });
+    if (a) {
+      const sl = (a.social_links && typeof a.social_links === "object") ? a.social_links : {};
+      setProfileForm({
+        display_name: a.display_name || "", bio: a.bio || "", avatar_url: a.avatar_url || "",
+        social_links: { instagram: sl.instagram || "", twitter: sl.twitter || "", facebook: sl.facebook || "", tiktok: sl.tiktok || "", youtube: sl.youtube || "", website: sl.website || "" },
+      });
+    }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
   };
