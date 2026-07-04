@@ -59,7 +59,23 @@ const AuthorDashboard = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
-  const [profileForm, setProfileForm] = useState({ display_name: "", bio: "", avatar_url: "" });
+  const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `blog/avatars/${authorId}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
+      setProfileForm(f => ({ ...f, avatar_url: data.publicUrl }));
+      toast.success("Avatar uploaded — remember to save your profile");
+    } catch (err: any) { toast.error(err.message); } finally { setAvatarUploading(false); }
+  };
 
   const allowed = isAuthor || isAdmin;
 
