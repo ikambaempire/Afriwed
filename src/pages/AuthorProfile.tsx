@@ -93,6 +93,15 @@ const AuthorProfile = () => {
             <p className="text-xs tracking-[0.25em] uppercase text-primary font-semibold mb-2">Afriwedd Author</p>
             <h1 className="font-display text-3xl md:text-4xl font-bold mb-3">{author.display_name}</h1>
             {author.bio && <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">{author.bio}</p>}
+            {author.social_links && typeof author.social_links === "object" && (
+              <div className="flex justify-center flex-wrap gap-3 mt-5">
+                {Object.entries(author.social_links as Record<string, string>).filter(([, v]) => v).map(([k, v]) => (
+                  <a key={k} href={v} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary transition-colors capitalize">
+                    {k}
+                  </a>
+                ))}
+              </div>
+            )}
             <p className="text-xs text-muted-foreground mt-4">{total} published {total === 1 ? "article" : "articles"}</p>
           </div>
         </section>
