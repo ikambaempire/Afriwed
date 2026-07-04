@@ -15,8 +15,9 @@ import { toast } from "@/hooks/use-toast";
 import {
   Users, Store, DollarSign, CheckCircle, XCircle,
   ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon,
-  Wallet, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload
+  Wallet, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload, Languages
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
@@ -112,6 +113,8 @@ const AdminDashboard = () => {
   const [mirroring, setMirroring] = useState(false);
   const [importing, setImporting] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [selectedStoryIds, setSelectedStoryIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchAll();
