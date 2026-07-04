@@ -16,9 +16,9 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-2">
           <Heart className="w-6 h-6 text-primary fill-primary" />
           <span className="font-display text-xl font-bold text-foreground tracking-tight">
-            Haruwa
+            Afriwedd
           </span>
-          <span className="text-xs font-sans text-muted-foreground hidden sm:inline">Rwanda</span>
+          <span className="text-xs font-sans text-muted-foreground hidden sm:inline">Africa</span>
         </Link>
 
         {/* Desktop nav */}

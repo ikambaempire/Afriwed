@@ -59,7 +59,23 @@ const AuthorDashboard = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
-  const [profileForm, setProfileForm] = useState({ display_name: "", bio: "", avatar_url: "" });
+  const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `blog/avatars/${authorId}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
+      setProfileForm(f => ({ ...f, avatar_url: data.publicUrl }));
+      toast.success("Avatar uploaded — remember to save your profile");
+    } catch (err: any) { toast.error(err.message); } finally { setAvatarUploading(false); }
+  };
 
   const allowed = isAuthor || isAdmin;
 
@@ -71,7 +87,13 @@ const AuthorDashboard = () => {
   const refresh = async () => {
     const { data: a } = await (supabase as any).from("blog_authors").select("*").eq("id", authorId).maybeSingle();
     setAuthorProfile(a);
-    if (a) setProfileForm({ display_name: a.display_name || "", bio: a.bio || "", avatar_url: a.avatar_url || "" });
+    if (a) {
+      const sl = (a.social_links && typeof a.social_links === "object") ? a.social_links : {};
+      setProfileForm({
+        display_name: a.display_name || "", bio: a.bio || "", avatar_url: a.avatar_url || "",
+        social_links: { instagram: sl.instagram || "", twitter: sl.twitter || "", facebook: sl.facebook || "", tiktok: sl.tiktok || "", youtube: sl.youtube || "", website: sl.website || "" },
+      });
+    }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
   };
@@ -215,10 +237,44 @@ const AuthorDashboard = () => {
             <TabsContent value="profile">
               <Card>
                 <CardHeader><CardTitle className="text-base">Public Author Profile</CardTitle></CardHeader>
-                <CardContent className="space-y-4 max-w-xl">
+                <CardContent className="space-y-5 max-w-2xl">
+                  <div>
+                    <Label>Profile picture</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="w-20 h-20 rounded-full overflow-hidden bg-muted border border-border shrink-0">
+                        {profileForm.avatar_url
+                          ? <img src={profileForm.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xl">{profileForm.display_name?.charAt(0) || "?"}</div>}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}>
+                          <Upload className="w-4 h-4 mr-1" />{avatarUploading ? "Uploading…" : "Upload from device"}
+                        </Button>
+                        <input ref={avatarInputRef} type="file" accept="image/*" hidden onChange={uploadAvatar} />
+                        {profileForm.avatar_url && <button type="button" onClick={() => setProfileForm(f => ({ ...f, avatar_url: "" }))} className="text-xs text-muted-foreground hover:text-destructive text-left">Remove picture</button>}
+                      </div>
+                    </div>
+                  </div>
                   <div><Label>Display name</Label><Input value={profileForm.display_name} onChange={e => setProfileForm({ ...profileForm, display_name: e.target.value })} /></div>
                   <div><Label>Bio</Label><Textarea value={profileForm.bio} onChange={e => setProfileForm({ ...profileForm, bio: e.target.value })} rows={5} /></div>
-                  <div><Label>Avatar URL</Label><Input value={profileForm.avatar_url} onChange={e => setProfileForm({ ...profileForm, avatar_url: e.target.value })} placeholder="https://..." /></div>
+
+                  <div>
+                    <Label>Social links</Label>
+                    <p className="text-xs text-muted-foreground mb-3">Paste full URLs. Empty fields are hidden on your public profile.</p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {(["instagram","twitter","facebook","tiktok","youtube","website"] as const).map((k) => (
+                        <div key={k}>
+                          <Label className="capitalize text-xs">{k}</Label>
+                          <Input
+                            value={profileForm.social_links[k] || ""}
+                            onChange={e => setProfileForm(f => ({ ...f, social_links: { ...f.social_links, [k]: e.target.value } }))}
+                            placeholder={k === "website" ? "https://yoursite.com" : `https://${k}.com/yourhandle`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <Button onClick={saveProfile}>Save profile</Button>
                 </CardContent>
               </Card>

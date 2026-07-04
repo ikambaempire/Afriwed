@@ -59,7 +59,7 @@ const PromoteAuthorCard = ({ onDone }: { onDone?: () => void }) => {
     <Card>
       <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserPlus className="w-4 h-4" />Promote user to Author by email</CardTitle></CardHeader>
       <CardContent className="space-y-3 max-w-xl">
-        <p className="text-xs text-muted-foreground">User must already have a Haruwa/Afriwedd account. We'll grant the author role and set up their public profile.</p>
+        <p className="text-xs text-muted-foreground">User must already have a Afriwedd/Afriwedd account. We'll grant the author role and set up their public profile.</p>
         <div><Label>User email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="writer@example.com" /></div>
         <div><Label>Public display name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Jane Mukamana" /></div>
         <div><Label>Short bio (optional)</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={2} /></div>

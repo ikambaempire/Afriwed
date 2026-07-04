@@ -34,13 +34,13 @@ const Install = () => {
 
   const handleInstall = async () => {
     if (!deferred) {
-      toast.info("Use your browser menu to add Haruwa to your home screen.");
+      toast.info("Use your browser menu to add Afriwedd to your home screen.");
       return;
     }
     await deferred.prompt();
     const { outcome } = await deferred.userChoice;
     if (outcome === "accepted") {
-      toast.success("Haruwa is installing on your device!");
+      toast.success("Afriwedd is installing on your device!");
       setInstalled(true);
     }
     setDeferred(null);
@@ -56,10 +56,10 @@ const Install = () => {
               <Smartphone className="w-10 h-10 text-primary" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">
-              Get the Haruwa App
+              Get the Afriwedd App
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Install Haruwa on your phone for a faster, app-like experience. Works on both Android and iOS.
+              Install Afriwedd on your phone for a faster, app-like experience. Works on both Android and iOS.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ const Install = () => {
             <div className="flex flex-col items-center gap-4">
               <img
                 src="/app-icon-512.png"
-                alt="Haruwa app icon"
+                alt="Afriwedd app icon"
                 width={120}
                 height={120}
                 loading="lazy"
@@ -80,7 +80,7 @@ const Install = () => {
                 disabled={installed}
               >
                 <Download className="w-5 h-5 mr-2" />
-                {installed ? "Installed" : "Install Haruwa"}
+                {installed ? "Installed" : "Install Afriwedd"}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
                 Free • No app store required • Works offline-ready
@@ -95,9 +95,9 @@ const Install = () => {
                 <h3 className="font-display font-semibold text-lg">Android / Chrome</h3>
               </div>
               <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>Tap the <strong>Install Haruwa</strong> button above.</li>
+                <li>Tap the <strong>Install Afriwedd</strong> button above.</li>
                 <li>Or open the browser menu (⋮) and choose <strong>Install app</strong> / <strong>Add to Home screen</strong>.</li>
-                <li>Confirm to add the Haruwa icon to your home screen.</li>
+                <li>Confirm to add the Afriwedd icon to your home screen.</li>
               </ol>
             </Card>
 

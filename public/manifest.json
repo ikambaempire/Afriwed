@@ -1,7 +1,7 @@
 {
-  "name": "Haruwa - Rwanda's Wedding Marketplace",
-  "short_name": "Haruwa",
-  "description": "Plan your dream wedding in Rwanda. Find and book the best vendors.",
+  "name": "Afriwedd - The African Wedding Publishing Platform",
+  "short_name": "Afriwedd",
+  "description": "Read, publish and celebrate African weddings.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

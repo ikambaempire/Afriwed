@@ -15,8 +15,9 @@ import { toast } from "@/hooks/use-toast";
 import {
   Users, Store, DollarSign, CheckCircle, XCircle,
   ShieldCheck, Star, Eye, AlertTriangle, Megaphone, Trash2, Image as ImageIcon,
-  Wallet, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload
+  Wallet, ArrowUpRight, PenLine, EyeOff, ExternalLink, Search, Upload, Languages
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
@@ -112,6 +113,8 @@ const AdminDashboard = () => {
   const [mirroring, setMirroring] = useState(false);
   const [importing, setImporting] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [selectedStoryIds, setSelectedStoryIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchAll();
@@ -304,6 +307,46 @@ const AdminDashboard = () => {
     }
   };
 
+  const toggleStorySelected = (id: string) => {
+    setSelectedStoryIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const runBulk = async (label: string, patch: any) => {
+    if (selectedStoryIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selectedStoryIds);
+      if (patch.status === "publish") patch.published_at = new Date().toISOString();
+      const { error } = await supabase.from("blog_posts").update(patch).in("id", ids);
+      if (error) throw error;
+      toast({ title: `${label} · ${ids.length} stories` });
+      setSelectedStoryIds(new Set());
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Bulk update failed", description: e.message, variant: "destructive" });
+    } finally { setBulkBusy(false); }
+  };
+  const bulkDelete = async () => {
+    if (selectedStoryIds.size === 0) return;
+    if (!confirm(`Delete ${selectedStoryIds.size} stories? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selectedStoryIds);
+      const { error } = await supabase.from("blog_posts").delete().in("id", ids);
+      if (error) throw error;
+      toast({ title: `Deleted ${ids.length} stories` });
+      setSelectedStoryIds(new Set());
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Bulk delete failed", description: e.message, variant: "destructive" });
+    } finally { setBulkBusy(false); }
+  };
+
+
+
 
   const approveVendor = async (id: string, approved: boolean) => {
     await supabase.from("vendors").update({ is_approved: approved }).eq("id", id);
@@ -421,7 +464,7 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Briefcase className="w-5 h-5 text-primary" /></div>
                 <div>
-                  <p className="font-display text-lg font-bold">Haruwa — Wedding Management</p>
+                  <p className="font-display text-lg font-bold">Afriwedd — Wedding Marketplace</p>
                   <p className="text-xs text-muted-foreground">Vendors, bookings, payments & withdrawals</p>
                 </div>
               </div>
@@ -818,9 +861,35 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
 
+                  {/* Bulk action bar */}
+                  <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-muted/40">
+                    <label className="flex items-center gap-2 text-sm font-medium mr-2">
+                      <Checkbox
+                        checked={filteredStories.length > 0 && filteredStories.every((s) => selectedStoryIds.has(s.id))}
+                        onCheckedChange={(v) => {
+                          if (v) setSelectedStoryIds(new Set(filteredStories.map((s) => s.id)));
+                          else setSelectedStoryIds(new Set());
+                        }}
+                      />
+                      Select all ({selectedStoryIds.size})
+                    </label>
+                    <div className="flex flex-wrap gap-2 ml-auto">
+                      <Button size="sm" disabled={bulkBusy || selectedStoryIds.size === 0} onClick={() => runBulk("Published", { status: "publish" })}><Eye className="w-4 h-4 mr-1" />Publish</Button>
+                      <Button size="sm" variant="outline" disabled={bulkBusy || selectedStoryIds.size === 0} onClick={() => runBulk("Hidden", { status: "draft" })}><EyeOff className="w-4 h-4 mr-1" />Hide</Button>
+                      <Button size="sm" variant="outline" disabled={bulkBusy || selectedStoryIds.size === 0} onClick={() => runBulk("Set to English", { language: "en" })}><Languages className="w-4 h-4 mr-1" />→ English</Button>
+                      <Button size="sm" variant="outline" disabled={bulkBusy || selectedStoryIds.size === 0} onClick={() => runBulk("Set to Kinyarwanda", { language: "rw" })}><Languages className="w-4 h-4 mr-1" />→ Kinyarwanda</Button>
+                      <Button size="sm" variant="ghost" className="text-destructive" disabled={bulkBusy || selectedStoryIds.size === 0} onClick={bulkDelete}><Trash2 className="w-4 h-4 mr-1" />Delete</Button>
+                    </div>
+                  </div>
+
                   <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
                     {filteredStories.map((story) => (
-                      <div key={story.id} className="p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 bg-card">
+                      <div key={story.id} className={`p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 ${selectedStoryIds.has(story.id) ? "bg-primary/5" : "bg-card"}`}>
+                        <Checkbox
+                          checked={selectedStoryIds.has(story.id)}
+                          onCheckedChange={() => toggleStorySelected(story.id)}
+                          className="mt-1 md:mt-0"
+                        />
                         <div className="w-full md:w-24 aspect-[4/3] rounded-md overflow-hidden bg-muted shrink-0">
                           <img
                             src={story.featured_image_url || storyFallbackImage}
