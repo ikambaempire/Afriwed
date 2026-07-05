@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, BookOpen, ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 import heroImage from "@/assets/hero-wedding.jpg";
 
 type Slide = {
@@ -42,6 +43,7 @@ const SLIDES: Slide[] = [
 ];
 
 const HeroSection = () => {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [email, setEmail] = useState("");
   const slide = SLIDES[index];
