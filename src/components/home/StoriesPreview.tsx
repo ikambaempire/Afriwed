@@ -58,7 +58,7 @@ const StoriesPreview = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const isMobile = useIsMobile();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,8 +119,8 @@ const StoriesPreview = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">Afriwedd Editorial</p>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Stories of African Love</h2>
+              <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">{t("Afriwedd Editorial")}</p>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">{t("Stories of African Love")}</h2>
             </div>
           </div>
           <HeroSkeleton />
@@ -142,11 +142,11 @@ const StoriesPreview = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">Afriwedd Editorial</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Stories of African Love</h2>
+            <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">{t("Afriwedd Editorial")}</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">{t("Stories of African Love")}</h2>
           </div>
           <Link to="/stories" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all">
-            All stories <ArrowRight className="w-4 h-4" />
+            {t("All stories")} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -211,14 +211,14 @@ const StoriesPreview = () => {
               disabled={loadingMore}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-60"
             >
-              {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</> : <>Load more stories</>}
+              {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("Loading…")}</> : <>{t("Load more stories")}</>}
             </button>
           )}
           {isMobile && loadingMore && (
-            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</span>
+            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> {t("Loading…")}</span>
           )}
           <Link to="/stories" className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-            Browse all stories <ArrowRight className="w-4 h-4" />
+            {t("Browse all stories")} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>

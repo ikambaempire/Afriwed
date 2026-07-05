@@ -19,7 +19,7 @@ const useStoryFallback = (event: SyntheticEvent<HTMLImageElement>) => {
 
 const EditorialFeature = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   useEffect(() => {
     supabase.from("blog_posts")
@@ -40,11 +40,11 @@ const EditorialFeature = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between mb-10 border-b border-border pb-5">
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">The Afriwedd Edit</p>
-            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight">From the Editorial Desk</h2>
+            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">{t("The Afriwedd Edit")}</p>
+            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight">{t("From the Editorial Desk")}</h2>
           </div>
           <Link to="/stories" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all">
-            All articles <ArrowRight className="w-4 h-4" />
+            {t("All articles")} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -54,7 +54,7 @@ const EditorialFeature = () => {
               <div className="aspect-[16/10] overflow-hidden rounded-2xl mb-6 bg-muted">
                 <img src={lead.featured_image_url || storyFallbackImage} onError={useStoryFallback} alt={lead.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
               </div>
-              <p className="text-xs tracking-widest uppercase text-primary font-semibold mb-3">Lead Story</p>
+              <p className="text-xs tracking-widest uppercase text-primary font-semibold mb-3">{t("Lead Story")}</p>
               <h3 className="font-display text-2xl md:text-4xl font-bold leading-tight mb-4 group-hover:text-primary transition-colors">{lead.title}</h3>
               <p className="text-muted-foreground text-base md:text-lg line-clamp-3" dangerouslySetInnerHTML={{ __html: (lead.excerpt || "").slice(0, 240) }} />
               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4">
