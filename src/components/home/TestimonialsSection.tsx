@@ -33,9 +33,9 @@ const TestimonialsSection = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {testimonials.map((t, i) => (
+        {testimonials.map((item, i) => (
           <motion.div
-            key={t.name}
+            key={item.name}
             className="bg-card p-6 rounded-xl shadow-card"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -43,19 +43,20 @@ const TestimonialsSection = () => {
             transition={{ delay: i * 0.1 }}
           >
             <div className="flex gap-0.5 mb-4">
-              {Array.from({ length: t.rating }).map((_, j) => (
+              {Array.from({ length: item.rating }).map((_, j) => (
                 <Star key={j} className="w-4 h-4 text-gold fill-gold" />
               ))}
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4 italic">
-              "{t.text}"
+              "{t(item.text)}"
             </p>
-            <p className="font-display font-semibold text-foreground text-sm">{t.name}</p>
+            <p className="font-display font-semibold text-foreground text-sm">{item.name}</p>
           </motion.div>
         ))}
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default TestimonialsSection;
