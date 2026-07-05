@@ -8,7 +8,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAdmin, isVendor, isAuthor, signOut } = useAuth();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -24,35 +24,35 @@ const Header = () => {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Find Vendors
+            {t("Find Vendors")}
           </Link>
           <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Real Weddings
+            {t("Real Weddings")}
           </Link>
           <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Stories
+            {t("Stories")}
           </Link>
           <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Plan Wedding
+            {t("Plan Wedding")}
           </Link>
           {user && (
             <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <MessageCircle className="w-4 h-4 inline mr-1" />Messages
+              <MessageCircle className="w-4 h-4 inline mr-1" />{t("Messages")}
             </Link>
           )}
           {isAuthor && (
             <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <PenLine className="w-4 h-4 inline mr-1" />Author
+              <PenLine className="w-4 h-4 inline mr-1" />{t("Author")}
             </Link>
           )}
           {isVendor && (
             <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <LayoutDashboard className="w-4 h-4 inline mr-1" />Vendor Dashboard
+              <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
             </Link>
           )}
           {isAdmin && (
             <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <ShieldCheck className="w-4 h-4 inline mr-1" />Admin
+              <ShieldCheck className="w-4 h-4 inline mr-1" />{t("Admin")}
             </Link>
           )}
         </nav>
@@ -65,12 +65,12 @@ const Header = () => {
           {user ? (
             <>
               <span className="text-sm text-muted-foreground">{user.email}</span>
-              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />Sign Out</Button>
+              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign In</Link></Button>
-              <Button size="sm" asChild><Link to="/auth?tab=vendor">List Your Business</Link></Button>
+              <Button variant="ghost" size="sm" asChild><Link to="/auth">{t("Sign In")}</Link></Button>
+              <Button size="sm" asChild><Link to="/auth?tab=vendor">{t("List Your Business")}</Link></Button>
             </>
           )}
         </div>
@@ -89,7 +89,7 @@ const Header = () => {
       {isOpen && (
         <div className="md:hidden bg-card border-b border-border px-4 pb-4 animate-fade-in">
           <div className="flex items-center justify-between py-3 border-b border-border">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1"><Languages className="w-3.5 h-3.5" />Language</span>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1"><Languages className="w-3.5 h-3.5" />{t("Language")}</span>
             <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium">
               <button onClick={() => setLang("en")} className={`px-3 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
               <button onClick={() => setLang("rw")} className={`px-3 py-1 ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>RW</button>
@@ -97,54 +97,54 @@ const Header = () => {
           </div>
           <nav className="flex flex-col gap-3 py-3">
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              Find Vendors
+              {t("Find Vendors")}
             </Link>
             <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              Real Weddings
+              {t("Real Weddings")}
             </Link>
             <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              Stories
+              {t("Stories")}
             </Link>
             <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              Plan Wedding
+              {t("Plan Wedding")}
             </Link>
             {user && (
               <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Messages
+                {t("Messages")}
               </Link>
             )}
             {isVendor && (
               <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Vendor Dashboard
+                {t("Vendor Dashboard")}
               </Link>
             )}
             {isAuthor && (
               <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Author Dashboard
+                {t("Author Dashboard")}
               </Link>
             )}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Admin Panel
+                {t("Admin Panel")}
               </Link>
             )}
             {user && !isAuthor && (
               <Link to="/author-apply" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-                Become an Author
+                {t("Become an Author")}
               </Link>
             )}
             <div className="flex gap-2 pt-2">
               {user ? (
                 <Button variant="ghost" size="sm" className="flex-1" onClick={() => { signOut(); setIsOpen(false); }}>
-                  <LogOut className="w-4 h-4 mr-1" />Sign Out
+                  <LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}
                 </Button>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" className="flex-1" asChild>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>Sign In</Link>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>{t("Sign In")}</Link>
                   </Button>
                   <Button size="sm" className="flex-1" asChild>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>List Your Business</Link>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>{t("List Your Business")}</Link>
                   </Button>
                 </>
               )}
