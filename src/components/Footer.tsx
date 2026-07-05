@@ -11,7 +11,7 @@ type CatCount = { id: string; slug: string; name: string; count: number };
 const CategoryCounts = () => {
   const [cats, setCats] = useState<CatCount[]>([]);
   const [total, setTotal] = useState(0);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -42,10 +42,10 @@ const CategoryCounts = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-1">Browse the archive</p>
-            <h4 className="font-display text-2xl font-bold">{total.toLocaleString()} stories {lang === "rw" ? "in Kinyarwanda" : "in English"}</h4>
+            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-1">{t("Browse the archive")}</p>
+            <h4 className="font-display text-2xl font-bold">{total.toLocaleString()} {t("stories")} {lang === "rw" ? t("in Kinyarwanda") : t("in English")}</h4>
           </div>
-          <Link to="/stories" className="text-xs text-primary-foreground/60 hover:text-primary transition-colors">View all categories →</Link>
+          <Link to="/stories" className="text-xs text-primary-foreground/60 hover:text-primary transition-colors">{t("View all categories →")}</Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {cats.map(c => (
@@ -60,7 +60,9 @@ const CategoryCounts = () => {
   );
 };
 
-const Footer = () => (
+const Footer = () => {
+  const { t } = useLanguage();
+  return (
   <footer className="bg-foreground text-primary-foreground">
     <CategoryCounts />
 
@@ -68,9 +70,9 @@ const Footer = () => (
     <div className="border-b border-primary-foreground/10">
       <div className="container mx-auto px-4 py-12 md:py-16 grid md:grid-cols-2 gap-8 items-center">
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">Join the Afriwedd Circle</p>
+          <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">{t("Join the Afriwedd Circle")}</p>
           <h3 className="font-display text-2xl md:text-3xl font-bold leading-tight">
-            Weekly stories, real weddings & inspiration in your inbox.
+            {t("Weekly stories, real weddings & inspiration in your inbox.")}
           </h3>
         </div>
         <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
@@ -79,12 +81,12 @@ const Footer = () => (
             <Input
               type="email"
               required
-              placeholder="your@email.com"
+              placeholder={t("your@email.com")}
               className="h-12 pl-11 bg-primary-foreground/5 border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/40 focus-visible:ring-primary"
             />
           </div>
           <Button type="submit" className="h-12 px-6 rounded-md bg-primary text-primary-foreground hover:opacity-90">
-            Subscribe
+            {t("Subscribe")}
           </Button>
         </form>
       </div>
@@ -99,7 +101,7 @@ const Footer = () => (
             <span className="font-display text-xl font-bold tracking-tight">Afriwedd</span>
           </div>
           <p className="text-sm text-primary-foreground/60 leading-relaxed max-w-sm mb-5">
-            A modern publishing home for African weddings — stories, real weddings, expert voices and the vendors who bring it all to life.
+            {t("A modern publishing home for African weddings — stories, real weddings, expert voices and the vendors who bring it all to life.")}
           </p>
           <div className="flex items-center gap-3">
             {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
@@ -111,34 +113,34 @@ const Footer = () => (
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">Read</h4>
+          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">{t("Read")}</h4>
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
-            <li><Link to="/stories" className="hover:text-primary transition-colors">All Stories</Link></li>
-            <li><Link to="/real-weddings" className="hover:text-primary transition-colors">Real Weddings</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">Culture</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">Style</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">Planning</Link></li>
+            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("All Stories")}</Link></li>
+            <li><Link to="/real-weddings" className="hover:text-primary transition-colors">{t("Real Weddings")}</Link></li>
+            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Culture")}</Link></li>
+            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Style")}</Link></li>
+            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Planning")}</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">Contribute</h4>
+          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">{t("Contribute")}</h4>
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
-            <li><Link to="/author-apply" className="hover:text-primary transition-colors">Become an Author</Link></li>
-            <li><Link to="/submit" className="hover:text-primary transition-colors">Submit Your Wedding</Link></li>
-            <li><Link to="/submit?type=vendor" className="hover:text-primary transition-colors">Submit a Listing</Link></li>
-            <li><Link to="/auth?tab=vendor" className="hover:text-primary transition-colors">List Your Business</Link></li>
+            <li><Link to="/author-apply" className="hover:text-primary transition-colors">{t("Become an Author")}</Link></li>
+            <li><Link to="/submit" className="hover:text-primary transition-colors">{t("Submit Your Wedding")}</Link></li>
+            <li><Link to="/submit?type=vendor" className="hover:text-primary transition-colors">{t("Submit a Listing")}</Link></li>
+            <li><Link to="/auth?tab=vendor" className="hover:text-primary transition-colors">{t("List Your Business")}</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">Company</h4>
+          <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">{t("Company")}</h4>
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
-            <li><Link to="/" className="hover:text-primary transition-colors">About Us</Link></li>
-            <li><Link to="/vendors" className="hover:text-primary transition-colors">Find Vendors</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">Contact</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">Privacy</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">Terms</Link></li>
+            <li><Link to="/" className="hover:text-primary transition-colors">{t("About Us")}</Link></li>
+            <li><Link to="/vendors" className="hover:text-primary transition-colors">{t("Find Vendors")}</Link></li>
+            <li><Link to="/" className="hover:text-primary transition-colors">{t("Contact")}</Link></li>
+            <li><Link to="/" className="hover:text-primary transition-colors">{t("Privacy")}</Link></li>
+            <li><Link to="/" className="hover:text-primary transition-colors">{t("Terms")}</Link></li>
           </ul>
         </div>
       </div>
@@ -148,18 +150,19 @@ const Footer = () => (
     <div className="border-t border-primary-foreground/10">
       <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-primary-foreground/40">
-          © {new Date().getFullYear()} Afriwedd. Crafted in Africa. All rights reserved.
+          © {new Date().getFullYear()} Afriwedd. {t("Crafted in Africa. All rights reserved.")}
         </p>
         <Link
           to="/install"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
         >
           <Smartphone className="w-3.5 h-3.5" />
-          Download the App
+          {t("Download the App")}
         </Link>
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;
