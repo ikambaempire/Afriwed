@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const testimonials = [
   {
@@ -19,13 +20,15 @@ const testimonials = [
   },
 ];
 
-const TestimonialsSection = () => (
+const TestimonialsSection = () => {
+  const { t } = useLanguage();
+  return (
   <section className="py-20 bg-muted">
     <div className="container mx-auto px-4">
       <div className="text-center mb-14">
-        <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">Love Stories</p>
+        <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">{t("Love Stories")}</p>
         <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-          Happy Couples
+          {t("Happy Couples")}
         </h2>
       </div>
 
