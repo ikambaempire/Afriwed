@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const RealWeddingsPreview = () => {
   const [items, setItems] = useState<any[]>([]);
+  const { t } = useLanguage();
   useEffect(() => {
     supabase.from("real_weddings").select("id, slug, couple_names, cover_image_url, wedding_type, location, country")
       .eq("status", "approved")
@@ -17,9 +19,9 @@ const RealWeddingsPreview = () => {
     <section className="py-16 md:py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">Real Weddings</p>
-          <h2 className="font-display text-3xl md:text-5xl font-bold">Love, Lived Out Loud</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mt-3">Authentic African wedding stories — the colours, the people, the vendors that made it.</p>
+          <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-2">{t("Real Weddings")}</p>
+          <h2 className="font-display text-3xl md:text-5xl font-bold">{t("Love, Lived Out Loud")}</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto mt-3">{t("Authentic African wedding stories — the colours, the people, the vendors that made it.")}</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {items.map((w, i) => (
@@ -37,7 +39,7 @@ const RealWeddingsPreview = () => {
         </div>
         <div className="text-center mt-10">
           <Link to="/real-weddings" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all">
-            Browse all real weddings <ArrowRight className="w-4 h-4" />
+            {t("Browse all real weddings")} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>

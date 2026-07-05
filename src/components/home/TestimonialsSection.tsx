@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const testimonials = [
   {
@@ -19,20 +20,22 @@ const testimonials = [
   },
 ];
 
-const TestimonialsSection = () => (
+const TestimonialsSection = () => {
+  const { t } = useLanguage();
+  return (
   <section className="py-20 bg-muted">
     <div className="container mx-auto px-4">
       <div className="text-center mb-14">
-        <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">Love Stories</p>
+        <p className="text-primary font-semibold text-sm tracking-widest uppercase mb-2">{t("Love Stories")}</p>
         <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-          Happy Couples
+          {t("Happy Couples")}
         </h2>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {testimonials.map((t, i) => (
+        {testimonials.map((item, i) => (
           <motion.div
-            key={t.name}
+            key={item.name}
             className="bg-card p-6 rounded-xl shadow-card"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -40,19 +43,20 @@ const TestimonialsSection = () => (
             transition={{ delay: i * 0.1 }}
           >
             <div className="flex gap-0.5 mb-4">
-              {Array.from({ length: t.rating }).map((_, j) => (
+              {Array.from({ length: item.rating }).map((_, j) => (
                 <Star key={j} className="w-4 h-4 text-gold fill-gold" />
               ))}
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4 italic">
-              "{t.text}"
+              "{t(item.text)}"
             </p>
-            <p className="font-display font-semibold text-foreground text-sm">{t.name}</p>
+            <p className="font-display font-semibold text-foreground text-sm">{item.name}</p>
           </motion.div>
         ))}
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default TestimonialsSection;

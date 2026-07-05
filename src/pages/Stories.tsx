@@ -18,7 +18,7 @@ type Cat = { id: string; slug: string; name: string };
 
 const Stories = () => {
   const [params, setParams] = useSearchParams();
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const activeCat = params.get("category") || "all";
   const q = params.get("q") || "";
   const [posts, setPosts] = useState<Post[]>([]);
@@ -81,12 +81,12 @@ const Stories = () => {
       <main className="pt-16">
         <section className="bg-gradient-teal py-20">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-primary-foreground/80 text-sm tracking-[0.25em] uppercase mb-3">Afriwedd Editorial</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-4">Stories of Love, Culture & Celebration</h1>
-            <p className="text-primary-foreground/80 max-w-2xl mx-auto">Real African weddings, vendor spotlights, and planning wisdom — straight from the continent.</p>
+            <p className="text-primary-foreground/80 text-sm tracking-[0.25em] uppercase mb-3">{t("Afriwedd Editorial")}</p>
+            <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-4">{t("Stories of Love, Culture & Celebration")}</h1>
+            <p className="text-primary-foreground/80 max-w-2xl mx-auto">{t("Real African weddings, vendor spotlights, and planning wisdom — straight from the continent.")}</p>
             <form onSubmit={onSearch} className="max-w-xl mx-auto mt-8 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search stories..." className="pl-11 h-12 rounded-full bg-card border-none" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Search stories...")} className="pl-11 h-12 rounded-full bg-card border-none" />
             </form>
           </div>
         </section>
@@ -94,7 +94,7 @@ const Stories = () => {
         <section className="border-b border-border bg-background sticky top-16 z-30">
           <div className="container mx-auto px-4">
             <div className="flex gap-2 overflow-x-auto py-3 no-scrollbar">
-              <Link to="/stories" className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium ${activeCat === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>All</Link>
+              <Link to="/stories" className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium ${activeCat === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{t("All")}</Link>
               {cats.map(c => (
                 <Link key={c.id} to={`/stories?category=${c.slug}`} className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium ${activeCat === c.slug ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{c.name}</Link>
               ))}
@@ -105,7 +105,7 @@ const Stories = () => {
         <section className="py-12 bg-background">
           <div className="container mx-auto px-4">
             {loading ? (
-              <p className="text-center py-12 text-muted-foreground">Loading stories...</p>
+              <p className="text-center py-12 text-muted-foreground">{t("Loading stories...")}</p>
             ) : (
               <>
                 {featured && (
@@ -115,7 +115,7 @@ const Stories = () => {
                         <img src={featured.featured_image_url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=900"} alt={featured.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
                       <div>
-                        <span className="text-primary text-sm font-semibold tracking-widest uppercase">Featured Story</span>
+                        <span className="text-primary text-sm font-semibold tracking-widest uppercase">{t("Featured Story")}</span>
                         <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mt-3 mb-4 leading-tight group-hover:text-primary transition-colors">{featured.title}</h2>
                         <p className="text-muted-foreground mb-4 line-clamp-3" dangerouslySetInnerHTML={{ __html: featured.excerpt || "" }} />
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -144,7 +144,7 @@ const Stories = () => {
                   ))}
                 </div>
                 {posts.length === 0 && !featured && (
-                  <p className="text-center py-12 text-muted-foreground">No stories found.</p>
+                  <p className="text-center py-12 text-muted-foreground">{t("No stories found.")}</p>
                 )}
               </>
             )}
