@@ -67,6 +67,29 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
 
+  // Forgot password
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSending, setForgotSending] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotSending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotSending(false);
+    if (error) {
+      toast({ title: "Couldn't send reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Reset link sent", description: "Check your inbox to reset your password." });
+      setForgotOpen(false);
+      setForgotEmail("");
+    }
+  };
+
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
