@@ -122,13 +122,14 @@ const AdminDashboard = () => {
   }, [isAdmin]);
 
   const fetchAll = async () => {
-    const [vRes, tRes, bRes, pRes, aRes, wRes] = await Promise.all([
+    const [vRes, tRes, bRes, pRes, aRes, wRes, rRes] = await Promise.all([
       supabase.from("vendors").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }),
       supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
       supabase.from("withdrawal_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
     setVendors(vRes.data ?? []);
     setTransactions(tRes.data ?? []);
@@ -136,6 +137,7 @@ const AdminDashboard = () => {
     setProfiles(pRes.data ?? []);
     setAds(aRes.data ?? []);
     setWithdrawals(wRes.data ?? []);
+    setUserRoles(rRes.data ?? []);
 
     const [sRes, rwRes, cmRes, storyRes, mPend, mDone, mErr] = await Promise.all([
       supabase.from("submissions").select("*").order("created_at", { ascending: false }),
