@@ -305,7 +305,7 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Password</Label>
-                    <Input type="password" value={vendorPassword} onChange={e => setVendorPassword(e.target.value)} required minLength={6} />
+                    <PasswordInput value={vendorPassword} onChange={(e: any) => setVendorPassword(e.target.value)} required minLength={6} />
                   </div>
                   <div className="space-y-2">
                     <Label>Business Description</Label>
