@@ -208,8 +208,17 @@ const Auth = () => {
                     <Input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required />
+                    <div className="flex items-center justify-between">
+                      <Label>Password</Label>
+                      <button
+                        type="button"
+                        onClick={() => setForgotOpen(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <PasswordInput value={loginPassword} onChange={(e: any) => setLoginPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
