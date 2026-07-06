@@ -78,6 +78,7 @@ const AdminDashboard = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [ads, setAds] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<any[]>([]);
   const [mode, setMode] = useState<"marketplace" | "editorial">(() =>
     (typeof window !== "undefined" && (localStorage.getItem("admin_mode") as any)) || "marketplace"
   );
