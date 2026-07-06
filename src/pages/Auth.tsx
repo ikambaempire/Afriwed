@@ -251,7 +251,7 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Password</Label>
-                    <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} required minLength={6} />
+                    <PasswordInput value={signupPassword} onChange={(e: any) => setSignupPassword(e.target.value)} required minLength={6} />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
