@@ -78,6 +78,7 @@ const AdminDashboard = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [ads, setAds] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<any[]>([]);
   const [mode, setMode] = useState<"marketplace" | "editorial">(() =>
     (typeof window !== "undefined" && (localStorage.getItem("admin_mode") as any)) || "marketplace"
   );
@@ -121,13 +122,14 @@ const AdminDashboard = () => {
   }, [isAdmin]);
 
   const fetchAll = async () => {
-    const [vRes, tRes, bRes, pRes, aRes, wRes] = await Promise.all([
+    const [vRes, tRes, bRes, pRes, aRes, wRes, rRes] = await Promise.all([
       supabase.from("vendors").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }),
       supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
       supabase.from("withdrawal_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
     setVendors(vRes.data ?? []);
     setTransactions(tRes.data ?? []);
@@ -135,6 +137,7 @@ const AdminDashboard = () => {
     setProfiles(pRes.data ?? []);
     setAds(aRes.data ?? []);
     setWithdrawals(wRes.data ?? []);
+    setUserRoles(rRes.data ?? []);
 
     const [sRes, rwRes, cmRes, storyRes, mPend, mDone, mErr] = await Promise.all([
       supabase.from("submissions").select("*").order("created_at", { ascending: false }),
@@ -806,19 +809,63 @@ const AdminDashboard = () => {
                 <CardHeader><CardTitle className="text-lg">All Users ({profiles.length})</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {profiles.map(p => (
-                      <div key={p.id} className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                        {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover" /> : <Users className="w-10 h-10 p-2 bg-background rounded-full text-muted-foreground" />}
-                        <div>
-                          <p className="font-medium text-foreground">{p.full_name || "Unnamed"}</p>
-                          <p className="text-xs text-muted-foreground">{p.email}</p>
+                    {profiles.map(p => {
+                      const isUserAdmin = userRoles.some(r => r.user_id === p.user_id && r.role === "admin");
+                      const toggleAdmin = async () => {
+                        if (!p.user_id) return;
+                        if (isUserAdmin) {
+                          if (p.user_id === user?.id) {
+                            toast({ title: "You can't remove your own admin role", variant: "destructive" });
+                            return;
+                          }
+                          const { error } = await supabase
+                            .from("user_roles")
+                            .delete()
+                            .eq("user_id", p.user_id)
+                            .eq("role", "admin");
+                          if (error) {
+                            toast({ title: "Failed to remove admin", description: error.message, variant: "destructive" });
+                          } else {
+                            toast({ title: "Admin role removed" });
+                            fetchAll();
+                          }
+                        } else {
+                          const { error } = await supabase
+                            .from("user_roles")
+                            .insert({ user_id: p.user_id, role: "admin" as any });
+                          if (error) {
+                            toast({ title: "Failed to grant admin", description: error.message, variant: "destructive" });
+                          } else {
+                            toast({ title: `${p.full_name || p.email} is now an admin` });
+                            fetchAll();
+                          }
+                        }
+                      };
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                          {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover" /> : <Users className="w-10 h-10 p-2 bg-background rounded-full text-muted-foreground" />}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-foreground truncate">{p.full_name || "Unnamed"}</p>
+                              {isUserAdmin && <Badge variant="secondary" className="gap-1"><ShieldCheck className="w-3 h-3" />Admin</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={isUserAdmin ? "outline" : "default"}
+                            onClick={toggleAdmin}
+                          >
+                            {isUserAdmin ? "Remove admin" : "Make admin"}
+                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
 
           </Tabs>
           ) : (

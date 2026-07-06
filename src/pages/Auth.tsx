@@ -9,9 +9,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Heart, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
+
+const PasswordInput = ({ value, onChange, ...rest }: any) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        className="pr-10"
+        {...rest}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      >
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+    </div>
+  );
+};
 
 const categoryLabels: Record<string, string> = {
   venues: "Venues", photographers: "Photographers", videographers: "Videographers",
@@ -42,6 +66,29 @@ const Auth = () => {
   const [location, setLocation] = useState("Kigali");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
+
+  // Forgot password
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSending, setForgotSending] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotSending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotSending(false);
+    if (error) {
+      toast({ title: "Couldn't send reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Reset link sent", description: "Check your inbox to reset your password." });
+      setForgotOpen(false);
+      setForgotEmail("");
+    }
+  };
+
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -184,8 +231,17 @@ const Auth = () => {
                     <Input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required />
+                    <div className="flex items-center justify-between">
+                      <Label>Password</Label>
+                      <button
+                        type="button"
+                        onClick={() => setForgotOpen(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <PasswordInput value={loginPassword} onChange={(e: any) => setLoginPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
@@ -218,7 +274,7 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Password</Label>
-                    <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} required minLength={6} />
+                    <PasswordInput value={signupPassword} onChange={(e: any) => setSignupPassword(e.target.value)} required minLength={6} />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
@@ -272,7 +328,7 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Password</Label>
-                    <Input type="password" value={vendorPassword} onChange={e => setVendorPassword(e.target.value)} required minLength={6} />
+                    <PasswordInput value={vendorPassword} onChange={(e: any) => setVendorPassword(e.target.value)} required minLength={6} />
                   </div>
                   <div className="space-y-2">
                     <Label>Business Description</Label>
@@ -288,6 +344,35 @@ const Auth = () => {
           </Tabs>
         </Card>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+            <DialogDescription>
+              Enter your account email and we'll send you a link to set a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setForgotOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={forgotSending}>
+                {forgotSending ? "Sending..." : "Send reset link"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
