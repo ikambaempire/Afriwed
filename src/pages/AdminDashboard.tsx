@@ -87,14 +87,17 @@ const AdminDashboard = () => {
     if (typeof window !== "undefined") localStorage.setItem("admin_mode", m);
   };
 
-  // New ad form
-  const [adTitle, setAdTitle] = useState("");
-  const [adDescription, setAdDescription] = useState("");
-  const [adVendorId, setAdVendorId] = useState("");
-  const [adMediaUrl, setAdMediaUrl] = useState("");
-  const [adMediaType, setAdMediaType] = useState("image");
+  // Ad form (create + edit)
+  const emptyAdForm = {
+    title: "", description: "", vendor_id: "", media_url: "", media_type: "image",
+    cta_text: "", cta_link: "", position: "below_hero", priority: 0,
+    start_date: "", end_date: "",
+  };
+  const [adForm, setAdForm] = useState<any>(emptyAdForm);
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const adFileRef = useRef<HTMLInputElement>(null);
+  const [previewAd, setPreviewAd] = useState<any>(null);
 
   // Editorial (Afriwedd)
   const [submissions, setSubmissions] = useState<any[]>([]);
