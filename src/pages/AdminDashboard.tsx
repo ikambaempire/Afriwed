@@ -99,7 +99,11 @@ const AdminDashboard = () => {
   // Editorial (Afriwedd)
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [realWeddings, setRealWeddings] = useState<any[]>([]);
-  const [pendingComments, setPendingComments] = useState<any[]>([]);
+  const [allComments, setAllComments] = useState<any[]>([]);
+  const [commentSearch, setCommentSearch] = useState("");
+  const [commentFilter, setCommentFilter] = useState<"all" | "pending" | "approved" | "hidden">("all");
+  const [selectedCommentIds, setSelectedCommentIds] = useState<Set<string>>(new Set());
+  const pendingComments = allComments.filter((c) => !c.approved && !c.hidden);
   const [stories, setStories] = useState<any[]>([]);
   const [storySearch, setStorySearch] = useState("");
   const [storyStatusFilter, setStoryStatusFilter] = useState("all");
@@ -142,7 +146,7 @@ const AdminDashboard = () => {
     const [sRes, rwRes, cmRes, storyRes, mPend, mDone, mErr] = await Promise.all([
       supabase.from("submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("real_weddings").select("*").order("created_at", { ascending: false }),
-      supabase.from("blog_comments").select("*, blog_posts(title, slug)").eq("approved", false).order("created_at", { ascending: false }).limit(50),
+      supabase.from("blog_comments").select("*, blog_posts(title, slug)").order("created_at", { ascending: false }).limit(2000),
       supabase.from("blog_posts").select("*, author:blog_authors(display_name)").order("published_at", { ascending: false, nullsFirst: false }).order("updated_at", { ascending: false }).limit(1000),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "done"),
@@ -150,7 +154,7 @@ const AdminDashboard = () => {
     ]);
     setSubmissions(sRes.data ?? []);
     setRealWeddings(rwRes.data ?? []);
-    setPendingComments(cmRes.data ?? []);
+    setAllComments(cmRes.data ?? []);
     setStories(storyRes.data ?? []);
     setMediaStats({ pending: mPend.count ?? 0, done: mDone.count ?? 0, error: mErr.count ?? 0 });
   };
@@ -191,14 +195,48 @@ const AdminDashboard = () => {
   };
 
   const approveComment = async (id: string, approved: boolean) => {
-    await supabase.from("blog_comments").update({ approved }).eq("id", id);
-    toast({ title: approved ? "Comment approved" : "Comment hidden" });
+    await supabase.from("blog_comments").update({ approved, hidden: false }).eq("id", id);
+    toast({ title: approved ? "Comment approved" : "Comment set to pending" });
+    fetchAll();
+  };
+
+  const hideComment = async (id: string) => {
+    await supabase.from("blog_comments").update({ hidden: true, approved: false }).eq("id", id);
+    toast({ title: "Comment hidden" });
     fetchAll();
   };
 
   const deleteComment = async (id: string) => {
     await supabase.from("blog_comments").delete().eq("id", id);
-    toast({ title: "Comment deleted" });
+    toast({ title: "Comment deleted permanently" });
+    fetchAll();
+  };
+
+  const bulkDeleteComments = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`Permanently delete ${ids.length} comment(s)? This cannot be undone.`)) return;
+    const { error } = await supabase.from("blog_comments").delete().in("id", ids);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Deleted ${ids.length} comment(s)` });
+    setSelectedCommentIds(new Set());
+    fetchAll();
+  };
+
+  const deleteAllComments = async () => {
+    if (!confirm(`Permanently delete ALL ${allComments.length} comments? This cannot be undone.`)) return;
+    const { error } = await supabase.from("blog_comments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "All comments deleted" });
+    setSelectedCommentIds(new Set());
+    fetchAll();
+  };
+
+  const deleteDefaultComments = async () => {
+    // Delete comments imported from WordPress (default/sample comments)
+    if (!confirm("Delete all default (imported) comments? This removes every comment with a WordPress origin.")) return;
+    const { error } = await supabase.from("blog_comments").delete().not("wp_comment_id", "is", null);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Default comments deleted" });
     fetchAll();
   };
 
