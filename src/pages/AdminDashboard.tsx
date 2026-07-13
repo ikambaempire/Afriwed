@@ -750,18 +750,24 @@ const AdminDashboard = () => {
             {/* Advertisements Tab */}
             <TabsContent value="ads">
               <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Megaphone className="w-5 h-5 text-primary" />Publish Advertisement</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                    {editingAdId ? "Edit Advertisement" : "Create Advertisement"}
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Ad Title</Label>
-                      <Input value={adTitle} onChange={e => setAdTitle(e.target.value)} placeholder="e.g. Featured Photographer" />
+                      <Label>Ad Title *</Label>
+                      <Input value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} placeholder="e.g. Featured Photographer" />
                     </div>
                     <div className="space-y-2">
                       <Label>Link to Vendor (optional)</Label>
-                      <Select value={adVendorId} onValueChange={setAdVendorId}>
+                      <Select value={adForm.vendor_id || "__none__"} onValueChange={(v) => setAdForm({ ...adForm, vendor_id: v === "__none__" ? "" : v })}>
                         <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__none__">— None —</SelectItem>
                           {vendors.map(v => (
                             <SelectItem key={v.id} value={v.id}>{v.business_name}</SelectItem>
                           ))}
@@ -771,70 +777,170 @@ const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
-                    <Textarea value={adDescription} onChange={e => setAdDescription(e.target.value)} placeholder="Short ad description..." rows={2} />
+                    <Textarea value={adForm.description} onChange={e => setAdForm({ ...adForm, description: e.target.value })} placeholder="Short ad description..." rows={2} />
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>CTA Button Text</Label>
+                      <Input value={adForm.cta_text} onChange={e => setAdForm({ ...adForm, cta_text: e.target.value })} placeholder="Learn more" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CTA Link</Label>
+                      <Input value={adForm.cta_link} onChange={e => setAdForm({ ...adForm, cta_link: e.target.value })} placeholder="https://... or /vendors" />
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>Position</Label>
+                      <Select value={adForm.position} onValueChange={(v) => setAdForm({ ...adForm, position: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="below_hero">Below Hero</SelectItem>
+                          <SelectItem value="sidebar">Sidebar</SelectItem>
+                          <SelectItem value="footer">Footer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Display Priority</Label>
+                      <Input type="number" value={adForm.priority} onChange={e => setAdForm({ ...adForm, priority: e.target.value })} placeholder="0" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input type="date" value={adForm.start_date} onChange={e => setAdForm({ ...adForm, start_date: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input type="date" value={adForm.end_date} onChange={e => setAdForm({ ...adForm, end_date: e.target.value })} />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Media (Image or Video)</Label>
+                    <Label>Banner Image / Video *</Label>
                     <input ref={adFileRef} type="file" accept="image/*,video/*" hidden onChange={handleAdUpload} />
-                    <div className="flex gap-3 items-center">
-                      <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading}>
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading} type="button">
                         <ImageIcon className="w-4 h-4 mr-2" />{uploading ? "Uploading..." : "Upload Media"}
                       </Button>
-                      {adMediaUrl && <Badge variant="secondary">✓ Media ready</Badge>}
+                      {adForm.media_url && <Badge variant="secondary">✓ Media ready</Badge>}
                     </div>
-                    {adMediaUrl && (
-                      <div className="mt-2 rounded-lg overflow-hidden max-w-xs">
-                        {adMediaType === "video" ? (
-                          <video src={adMediaUrl} className="w-full h-32 object-cover" controls />
+                    {adForm.media_url && (
+                      <div className="mt-2 rounded-lg overflow-hidden max-w-xs border border-border">
+                        {adForm.media_type === "video" ? (
+                          <video src={adForm.media_url} className="w-full h-32 object-cover" controls />
                         ) : (
-                          <img src={adMediaUrl} alt="Preview" className="w-full h-32 object-cover" />
+                          <img src={adForm.media_url} alt="Preview" className="w-full h-32 object-cover" />
                         )}
                       </div>
                     )}
                   </div>
-                  <Button onClick={publishAd} disabled={!adTitle || !adMediaUrl}>
-                    <Megaphone className="w-4 h-4 mr-2" />Publish Ad
-                  </Button>
+                  <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
+                    <Button onClick={() => saveAd(true)} disabled={!adForm.title || !adForm.media_url}>
+                      <Megaphone className="w-4 h-4 mr-2" />{editingAdId ? "Update & Publish" : "Publish"}
+                    </Button>
+                    <Button variant="outline" onClick={() => saveAd(false)} disabled={!adForm.title || !adForm.media_url}>
+                      Save as Draft
+                    </Button>
+                    {adForm.media_url && (
+                      <Button variant="ghost" type="button" onClick={() => setPreviewAd({ ...adForm })}>
+                        <Eye className="w-4 h-4 mr-1" />Preview
+                      </Button>
+                    )}
+                    {editingAdId && (
+                      <Button variant="ghost" onClick={resetAdForm}>Cancel edit</Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card className="mt-6">
-                <CardHeader><CardTitle className="text-lg">Active Advertisements ({ads.length})</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
+                    <span>All Advertisements ({ads.length})</span>
+                    <div className="flex gap-2 text-xs">
+                      <Badge variant="default">{ads.filter(a => a.is_published && a.is_active).length} live</Badge>
+                      <Badge variant="secondary">{ads.filter(a => !a.is_published).length} draft</Badge>
+                      <Badge variant="outline">{ads.filter(a => a.is_published && !a.is_active).length} inactive</Badge>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {ads.map(ad => (
-                      <div key={ad.id} className="flex items-center justify-between gap-4 p-4 bg-muted rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-16 h-12 rounded overflow-hidden flex-shrink-0">
+                    {ads.map(ad => {
+                      const live = ad.is_published && ad.is_active;
+                      return (
+                      <div key={ad.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-20 h-14 rounded overflow-hidden flex-shrink-0">
                             {ad.media_type === "video" ? (
                               <video src={ad.media_url} className="w-full h-full object-cover" />
                             ) : (
                               <img src={ad.media_url} alt="" className="w-full h-full object-cover" />
                             )}
                           </div>
-                          <div>
-                            <p className="font-medium text-foreground text-sm">{ad.title}</p>
-                            <p className="text-xs text-muted-foreground">{ad.description}</p>
-                            <Badge variant={ad.is_active ? "default" : "secondary"} className="text-xs mt-1">
-                              {ad.is_active ? "Active" : "Inactive"}
-                            </Badge>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">{ad.title}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-md">{ad.description}</p>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              <Badge variant={live ? "default" : ad.is_published ? "outline" : "secondary"} className="text-xs">
+                                {live ? "Live" : ad.is_published ? "Inactive" : "Draft"}
+                              </Badge>
+                              {ad.position && <Badge variant="outline" className="text-xs">{ad.position}</Badge>}
+                              {ad.priority > 0 && <Badge variant="outline" className="text-xs">P{ad.priority}</Badge>}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => toggleAdActive(ad.id, !ad.is_active)}>
-                            {ad.is_active ? "Deactivate" : "Activate"}
-                          </Button>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" variant="ghost" onClick={() => setPreviewAd(ad)}><Eye className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => openEditAd(ad)}><PenLine className="w-4 h-4 mr-1" />Edit</Button>
+                          {ad.is_published ? (
+                            <Button size="sm" variant="outline" onClick={() => toggleAdPublished(ad.id, false)}>Unpublish</Button>
+                          ) : (
+                            <Button size="sm" onClick={() => toggleAdPublished(ad.id, true)}>Publish</Button>
+                          )}
+                          {ad.is_published && (
+                            <Button size="sm" variant="outline" onClick={() => toggleAdActive(ad.id, !ad.is_active)}>
+                              {ad.is_active ? "Deactivate" : "Activate"}
+                            </Button>
+                          )}
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteAd(ad.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    );})}
                     {ads.length === 0 && <p className="text-center py-8 text-muted-foreground">No advertisements yet</p>}
                   </div>
                 </CardContent>
               </Card>
+
+              <Dialog open={!!previewAd} onOpenChange={(o) => !o && setPreviewAd(null)}>
+                <DialogContent className="w-[95vw] max-w-2xl">
+                  <DialogHeader><DialogTitle>Advertisement preview</DialogTitle></DialogHeader>
+                  {previewAd && (
+                    <div className="relative rounded-xl overflow-hidden">
+                      {previewAd.media_type === "video" ? (
+                        <video src={previewAd.media_url} className="w-full h-72 object-cover" controls />
+                      ) : (
+                        <img src={previewAd.media_url} className="w-full h-72 object-cover" alt="" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 p-6 text-primary-foreground">
+                        <h3 className="font-display text-2xl font-bold">{previewAd.title}</h3>
+                        {previewAd.description && <p className="text-sm mt-1 text-primary-foreground/80">{previewAd.description}</p>}
+                        {(previewAd.cta_text || previewAd.cta_link) && (
+                          <span className="inline-flex items-center gap-1 mt-3 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold">
+                            {previewAd.cta_text || "Learn more"} <ExternalLink className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TabsContent>
+
 
 
             {/* Transactions Tab */}
