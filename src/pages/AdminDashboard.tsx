@@ -412,6 +412,7 @@ const AdminDashboard = () => {
 
   const handleAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !user) return;
     setUploading(true);
     const ext = file.name.split(".").pop();
@@ -423,22 +424,59 @@ const AdminDashboard = () => {
       return;
     }
     const { data: publicUrl } = supabase.storage.from("vendor-media").getPublicUrl(path);
-    setAdMediaUrl(publicUrl.publicUrl);
-    setAdMediaType(file.type.startsWith("video") ? "video" : "image");
+    setAdForm((f: any) => ({
+      ...f,
+      media_url: publicUrl.publicUrl,
+      media_type: file.type.startsWith("video") ? "video" : "image",
+    }));
     setUploading(false);
   };
 
-  const publishAd = async () => {
-    if (!adTitle || !adMediaUrl) {
+  const resetAdForm = () => { setAdForm(emptyAdForm); setEditingAdId(null); };
+
+  const openEditAd = (ad: any) => {
+    setEditingAdId(ad.id);
+    setAdForm({
+      title: ad.title || "",
+      description: ad.description || "",
+      vendor_id: ad.vendor_id || "",
+      media_url: ad.media_url || "",
+      media_type: ad.media_type || "image",
+      cta_text: ad.cta_text || "",
+      cta_link: ad.cta_link || "",
+      position: ad.position || "below_hero",
+      priority: ad.priority ?? 0,
+      start_date: ad.start_date ? ad.start_date.slice(0, 10) : "",
+      end_date: ad.end_date ? ad.end_date.slice(0, 10) : "",
+    });
+  };
+
+  const saveAd = async (publish: boolean) => {
+    if (!adForm.title || !adForm.media_url) {
       toast({ title: "Title and media are required", variant: "destructive" });
       return;
     }
-    await supabase.from("advertisements").insert({
-      title: adTitle, description: adDescription, media_url: adMediaUrl,
-      media_type: adMediaType, vendor_id: adVendorId || null, is_active: true,
-    });
-    setAdTitle(""); setAdDescription(""); setAdMediaUrl(""); setAdVendorId("");
-    toast({ title: "Advertisement published!" });
+    const payload: any = {
+      title: adForm.title,
+      description: adForm.description || null,
+      media_url: adForm.media_url,
+      media_type: adForm.media_type,
+      vendor_id: adForm.vendor_id || null,
+      cta_text: adForm.cta_text || null,
+      cta_link: adForm.cta_link || null,
+      position: adForm.position || "below_hero",
+      priority: Number(adForm.priority) || 0,
+      start_date: adForm.start_date || null,
+      end_date: adForm.end_date || null,
+      is_published: publish,
+      is_active: publish ? true : false,
+    };
+    const { error } = editingAdId
+      ? await supabase.from("advertisements").update(payload).eq("id", editingAdId)
+      : await supabase.from("advertisements").insert(payload);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: publish ? (editingAdId ? "Ad updated & published" : "Advertisement published!") : "Draft saved" });
+    resetAdForm();
     fetchAll();
   };
 
@@ -448,11 +486,19 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
-  const deleteAd = async (id: string) => {
-    await supabase.from("advertisements").delete().eq("id", id);
-    toast({ title: "Ad deleted" });
+  const toggleAdPublished = async (id: string, published: boolean) => {
+    await supabase.from("advertisements").update({ is_published: published, is_active: published }).eq("id", id);
+    toast({ title: published ? "Ad published live" : "Ad moved to draft" });
     fetchAll();
   };
+
+  const deleteAd = async (id: string) => {
+    if (!confirm("Permanently delete this advertisement? This cannot be undone.")) return;
+    await supabase.from("advertisements").delete().eq("id", id);
+    toast({ title: "Ad deleted permanently" });
+    fetchAll();
+  };
+
 
   const processWithdrawal = async (id: string, status: "completed" | "rejected", notes?: string) => {
     await supabase.from("withdrawal_requests").update({
