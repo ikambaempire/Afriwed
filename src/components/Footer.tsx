@@ -104,11 +104,28 @@ const Footer = () => {
             {t("A modern publishing home for African weddings — stories, real weddings, expert voices and the vendors who bring it all to life.")}
           </p>
           <div className="flex items-center gap-3">
-            {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
-              <a key={i} href="#" aria-label="social" className="w-9 h-9 rounded-full border border-primary-foreground/15 flex items-center justify-center hover:bg-primary hover:border-primary transition-colors">
-                <Icon className="w-4 h-4" />
-              </a>
-            ))}
+            {[
+              { Icon: Instagram, href: "https://www.instagram.com/afriwed_rw/", label: "Instagram" },
+              { Icon: Facebook, href: "#", label: "Facebook (coming soon)" },
+              { Icon: Twitter, href: "https://x.com/afriwed_rw", label: "X (Twitter)" },
+              { Icon: Youtube, href: "https://www.youtube.com/@AfriWedRwanda", label: "YouTube" },
+            ].map(({ Icon, href, label }) => {
+              const disabled = href === "#";
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  target={disabled ? undefined : "_blank"}
+                  rel={disabled ? undefined : "noopener noreferrer"}
+                  aria-label={label}
+                  aria-disabled={disabled || undefined}
+                  onClick={(e) => { if (disabled) e.preventDefault(); }}
+                  className={`w-9 h-9 rounded-full border border-primary-foreground/15 flex items-center justify-center transition-all duration-300 ${disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-primary hover:border-primary hover:-translate-y-0.5"}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              );
+            })}
           </div>
         </div>
 

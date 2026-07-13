@@ -6,6 +6,7 @@ import PartnersSection from "@/components/home/PartnersSection";
 import EditorialFeature from "@/components/home/EditorialFeature";
 import RealWeddingsPreview from "@/components/home/RealWeddingsPreview";
 import StoriesPreview from "@/components/home/StoriesPreview";
+import AdBanner from "@/components/home/AdBanner";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -36,6 +37,7 @@ const Index = () => (
     <Header />
     <main>
       <HeroSection />
+      <AdBanner />
       <EditorialFeature />
       <StoriesPreview />
       <RealWeddingsPreview />
