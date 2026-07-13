@@ -1197,27 +1197,145 @@ const AdminDashboard = () => {
             </TabsContent>
 
             <TabsContent value="comments">
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
-                  {pendingComments.map(c => (
-                    <div key={c.id} className="border border-border rounded-lg p-3">
-                      <div className="flex justify-between items-start gap-3 mb-1">
-                        <div>
-                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+              {(() => {
+                const stats = {
+                  total: allComments.length,
+                  approved: allComments.filter(c => c.approved && !c.hidden).length,
+                  pending: allComments.filter(c => !c.approved && !c.hidden).length,
+                  hidden: allComments.filter(c => c.hidden).length,
+                  defaults: allComments.filter(c => c.wp_comment_id != null).length,
+                };
+                const q = commentSearch.trim().toLowerCase();
+                const filtered = allComments.filter((c) => {
+                  const status = c.hidden ? "hidden" : c.approved ? "approved" : "pending";
+                  if (commentFilter !== "all" && commentFilter !== status) return false;
+                  if (!q) return true;
+                  return (
+                    (c.author_name || "").toLowerCase().includes(q) ||
+                    (c.author_email || "").toLowerCase().includes(q) ||
+                    (c.content || "").toLowerCase().includes(q) ||
+                    (c.blog_posts?.title || "").toLowerCase().includes(q)
+                  );
+                });
+                const allSelected = filtered.length > 0 && filtered.every(c => selectedCommentIds.has(c.id));
+                const toggleAll = () => {
+                  const next = new Set(selectedCommentIds);
+                  if (allSelected) filtered.forEach(c => next.delete(c.id));
+                  else filtered.forEach(c => next.add(c.id));
+                  setSelectedCommentIds(next);
+                };
+                const toggleOne = (id: string) => {
+                  const next = new Set(selectedCommentIds);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  setSelectedCommentIds(next);
+                };
+                return (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                      {[
+                        { label: "Total", value: stats.total, color: "text-foreground" },
+                        { label: "Approved", value: stats.approved, color: "text-green-600" },
+                        { label: "Pending", value: stats.pending, color: "text-accent" },
+                        { label: "Hidden", value: stats.hidden, color: "text-destructive" },
+                      ].map((s) => (
+                        <Card key={s.label}><CardContent className="pt-5">
+                          <p className="text-xs text-muted-foreground">{s.label}</p>
+                          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                        </CardContent></Card>
+                      ))}
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+
+                    <Card>
+                      <CardHeader className="space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <CardTitle className="text-lg">Comments ({filtered.length})</CardTitle>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button size="sm" variant="outline" onClick={deleteDefaultComments} disabled={stats.defaults === 0}>
+                              <Trash2 className="w-4 h-4 mr-1" />Delete default ({stats.defaults})
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={deleteAllComments} disabled={stats.total === 0}>
+                              Delete all comments
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <div className="relative flex-1 min-w-[220px]">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input value={commentSearch} onChange={e => setCommentSearch(e.target.value)} placeholder="Search author, email, story or content..." className="pl-9" />
+                          </div>
+                          <Select value={commentFilter} onValueChange={(v: any) => setCommentFilter(v)}>
+                            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All statuses</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="hidden">Hidden</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {selectedCommentIds.size > 0 && (
+                          <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                            <span className="text-sm">{selectedCommentIds.size} selected</span>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => setSelectedCommentIds(new Set())}>Clear</Button>
+                              <Button size="sm" variant="destructive" onClick={() => bulkDeleteComments(Array.from(selectedCommentIds))}>
+                                <Trash2 className="w-4 h-4 mr-1" />Delete selected
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {filtered.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No comments match your filters.</p>}
+                        {filtered.length > 0 && (
+                          <div className="flex items-center gap-2 pb-2 border-b border-border">
+                            <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                            <span className="text-xs text-muted-foreground">Select all on page</span>
+                          </div>
+                        )}
+                        {filtered.slice(0, 200).map(c => {
+                          const status = c.hidden ? "hidden" : c.approved ? "approved" : "pending";
+                          return (
+                            <div key={c.id} className="border border-border rounded-lg p-3">
+                              <div className="flex justify-between items-start gap-3 mb-2">
+                                <div className="flex items-start gap-2 min-w-0">
+                                  <Checkbox className="mt-1" checked={selectedCommentIds.has(c.id)} onCheckedChange={() => toggleOne(c.id)} />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                      {c.author_name}
+                                      {c.author_email && <span className="text-xs text-muted-foreground ml-2">&lt;{c.author_email}&gt;</span>}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      on <Link className="underline" to={`/stories/${c.blog_posts?.slug || ""}`} target="_blank">{c.blog_posts?.title || "—"}</Link>
+                                      {" · "}{new Date(c.created_at).toLocaleDateString()}
+                                      {" · "}<Badge variant={status === "approved" ? "default" : status === "hidden" ? "destructive" : "secondary"} className="text-[10px] ml-1 capitalize">{status}</Badge>
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  {status !== "approved" && (
+                                    <Button size="sm" variant="outline" onClick={() => approveComment(c.id, true)} title="Approve"><CheckCircle className="w-4 h-4" /></Button>
+                                  )}
+                                  {status !== "hidden" && (
+                                    <Button size="sm" variant="outline" onClick={() => hideComment(c.id)} title="Hide"><EyeOff className="w-4 h-4" /></Button>
+                                  )}
+                                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteComment(c.id)} title="Delete permanently"><Trash2 className="w-4 h-4" /></Button>
+                                </div>
+                              </div>
+                              <p className="text-sm text-foreground/80 pl-6">{(c.content || "").replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+                            </div>
+                          );
+                        })}
+                        {filtered.length > 200 && (
+                          <p className="text-xs text-muted-foreground text-center pt-3">Showing first 200 of {filtered.length}. Refine your search to see more.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
             </TabsContent>
+
 
             <TabsContent value="real-weddings">
               <Card>
