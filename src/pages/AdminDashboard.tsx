@@ -87,19 +87,26 @@ const AdminDashboard = () => {
     if (typeof window !== "undefined") localStorage.setItem("admin_mode", m);
   };
 
-  // New ad form
-  const [adTitle, setAdTitle] = useState("");
-  const [adDescription, setAdDescription] = useState("");
-  const [adVendorId, setAdVendorId] = useState("");
-  const [adMediaUrl, setAdMediaUrl] = useState("");
-  const [adMediaType, setAdMediaType] = useState("image");
+  // Ad form (create + edit)
+  const emptyAdForm = {
+    title: "", description: "", vendor_id: "", media_url: "", media_type: "image",
+    cta_text: "", cta_link: "", position: "below_hero", priority: 0,
+    start_date: "", end_date: "",
+  };
+  const [adForm, setAdForm] = useState<any>(emptyAdForm);
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const adFileRef = useRef<HTMLInputElement>(null);
+  const [previewAd, setPreviewAd] = useState<any>(null);
 
   // Editorial (Afriwedd)
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [realWeddings, setRealWeddings] = useState<any[]>([]);
-  const [pendingComments, setPendingComments] = useState<any[]>([]);
+  const [allComments, setAllComments] = useState<any[]>([]);
+  const [commentSearch, setCommentSearch] = useState("");
+  const [commentFilter, setCommentFilter] = useState<"all" | "pending" | "approved" | "hidden">("all");
+  const [selectedCommentIds, setSelectedCommentIds] = useState<Set<string>>(new Set());
+  const pendingComments = allComments.filter((c) => !c.approved && !c.hidden);
   const [stories, setStories] = useState<any[]>([]);
   const [storySearch, setStorySearch] = useState("");
   const [storyStatusFilter, setStoryStatusFilter] = useState("all");
@@ -142,7 +149,7 @@ const AdminDashboard = () => {
     const [sRes, rwRes, cmRes, storyRes, mPend, mDone, mErr] = await Promise.all([
       supabase.from("submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("real_weddings").select("*").order("created_at", { ascending: false }),
-      supabase.from("blog_comments").select("*, blog_posts(title, slug)").eq("approved", false).order("created_at", { ascending: false }).limit(50),
+      supabase.from("blog_comments").select("*, blog_posts(title, slug)").order("created_at", { ascending: false }).limit(2000),
       supabase.from("blog_posts").select("*, author:blog_authors(display_name)").order("published_at", { ascending: false, nullsFirst: false }).order("updated_at", { ascending: false }).limit(1000),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("blog_media_assets").select("*", { count: "exact", head: true }).eq("status", "done"),
@@ -150,7 +157,7 @@ const AdminDashboard = () => {
     ]);
     setSubmissions(sRes.data ?? []);
     setRealWeddings(rwRes.data ?? []);
-    setPendingComments(cmRes.data ?? []);
+    setAllComments(cmRes.data ?? []);
     setStories(storyRes.data ?? []);
     setMediaStats({ pending: mPend.count ?? 0, done: mDone.count ?? 0, error: mErr.count ?? 0 });
   };
@@ -191,14 +198,48 @@ const AdminDashboard = () => {
   };
 
   const approveComment = async (id: string, approved: boolean) => {
-    await supabase.from("blog_comments").update({ approved }).eq("id", id);
-    toast({ title: approved ? "Comment approved" : "Comment hidden" });
+    await supabase.from("blog_comments").update({ approved, hidden: false }).eq("id", id);
+    toast({ title: approved ? "Comment approved" : "Comment set to pending" });
+    fetchAll();
+  };
+
+  const hideComment = async (id: string) => {
+    await supabase.from("blog_comments").update({ hidden: true, approved: false }).eq("id", id);
+    toast({ title: "Comment hidden" });
     fetchAll();
   };
 
   const deleteComment = async (id: string) => {
     await supabase.from("blog_comments").delete().eq("id", id);
-    toast({ title: "Comment deleted" });
+    toast({ title: "Comment deleted permanently" });
+    fetchAll();
+  };
+
+  const bulkDeleteComments = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`Permanently delete ${ids.length} comment(s)? This cannot be undone.`)) return;
+    const { error } = await supabase.from("blog_comments").delete().in("id", ids);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Deleted ${ids.length} comment(s)` });
+    setSelectedCommentIds(new Set());
+    fetchAll();
+  };
+
+  const deleteAllComments = async () => {
+    if (!confirm(`Permanently delete ALL ${allComments.length} comments? This cannot be undone.`)) return;
+    const { error } = await supabase.from("blog_comments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "All comments deleted" });
+    setSelectedCommentIds(new Set());
+    fetchAll();
+  };
+
+  const deleteDefaultComments = async () => {
+    // Delete comments imported from WordPress (default/sample comments)
+    if (!confirm("Delete all default (imported) comments? This removes every comment with a WordPress origin.")) return;
+    const { error } = await supabase.from("blog_comments").delete().not("wp_comment_id", "is", null);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Default comments deleted" });
     fetchAll();
   };
 
@@ -371,6 +412,7 @@ const AdminDashboard = () => {
 
   const handleAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !user) return;
     setUploading(true);
     const ext = file.name.split(".").pop();
@@ -382,22 +424,59 @@ const AdminDashboard = () => {
       return;
     }
     const { data: publicUrl } = supabase.storage.from("vendor-media").getPublicUrl(path);
-    setAdMediaUrl(publicUrl.publicUrl);
-    setAdMediaType(file.type.startsWith("video") ? "video" : "image");
+    setAdForm((f: any) => ({
+      ...f,
+      media_url: publicUrl.publicUrl,
+      media_type: file.type.startsWith("video") ? "video" : "image",
+    }));
     setUploading(false);
   };
 
-  const publishAd = async () => {
-    if (!adTitle || !adMediaUrl) {
+  const resetAdForm = () => { setAdForm(emptyAdForm); setEditingAdId(null); };
+
+  const openEditAd = (ad: any) => {
+    setEditingAdId(ad.id);
+    setAdForm({
+      title: ad.title || "",
+      description: ad.description || "",
+      vendor_id: ad.vendor_id || "",
+      media_url: ad.media_url || "",
+      media_type: ad.media_type || "image",
+      cta_text: ad.cta_text || "",
+      cta_link: ad.cta_link || "",
+      position: ad.position || "below_hero",
+      priority: ad.priority ?? 0,
+      start_date: ad.start_date ? ad.start_date.slice(0, 10) : "",
+      end_date: ad.end_date ? ad.end_date.slice(0, 10) : "",
+    });
+  };
+
+  const saveAd = async (publish: boolean) => {
+    if (!adForm.title || !adForm.media_url) {
       toast({ title: "Title and media are required", variant: "destructive" });
       return;
     }
-    await supabase.from("advertisements").insert({
-      title: adTitle, description: adDescription, media_url: adMediaUrl,
-      media_type: adMediaType, vendor_id: adVendorId || null, is_active: true,
-    });
-    setAdTitle(""); setAdDescription(""); setAdMediaUrl(""); setAdVendorId("");
-    toast({ title: "Advertisement published!" });
+    const payload: any = {
+      title: adForm.title,
+      description: adForm.description || null,
+      media_url: adForm.media_url,
+      media_type: adForm.media_type,
+      vendor_id: adForm.vendor_id || null,
+      cta_text: adForm.cta_text || null,
+      cta_link: adForm.cta_link || null,
+      position: adForm.position || "below_hero",
+      priority: Number(adForm.priority) || 0,
+      start_date: adForm.start_date || null,
+      end_date: adForm.end_date || null,
+      is_published: publish,
+      is_active: publish ? true : false,
+    };
+    const { error } = editingAdId
+      ? await supabase.from("advertisements").update(payload).eq("id", editingAdId)
+      : await supabase.from("advertisements").insert(payload);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: publish ? (editingAdId ? "Ad updated & published" : "Advertisement published!") : "Draft saved" });
+    resetAdForm();
     fetchAll();
   };
 
@@ -407,11 +486,19 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
-  const deleteAd = async (id: string) => {
-    await supabase.from("advertisements").delete().eq("id", id);
-    toast({ title: "Ad deleted" });
+  const toggleAdPublished = async (id: string, published: boolean) => {
+    await supabase.from("advertisements").update({ is_published: published, is_active: published }).eq("id", id);
+    toast({ title: published ? "Ad published live" : "Ad moved to draft" });
     fetchAll();
   };
+
+  const deleteAd = async (id: string) => {
+    if (!confirm("Permanently delete this advertisement? This cannot be undone.")) return;
+    await supabase.from("advertisements").delete().eq("id", id);
+    toast({ title: "Ad deleted permanently" });
+    fetchAll();
+  };
+
 
   const processWithdrawal = async (id: string, status: "completed" | "rejected", notes?: string) => {
     await supabase.from("withdrawal_requests").update({
@@ -663,18 +750,24 @@ const AdminDashboard = () => {
             {/* Advertisements Tab */}
             <TabsContent value="ads">
               <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Megaphone className="w-5 h-5 text-primary" />Publish Advertisement</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                    {editingAdId ? "Edit Advertisement" : "Create Advertisement"}
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Ad Title</Label>
-                      <Input value={adTitle} onChange={e => setAdTitle(e.target.value)} placeholder="e.g. Featured Photographer" />
+                      <Label>Ad Title *</Label>
+                      <Input value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} placeholder="e.g. Featured Photographer" />
                     </div>
                     <div className="space-y-2">
                       <Label>Link to Vendor (optional)</Label>
-                      <Select value={adVendorId} onValueChange={setAdVendorId}>
+                      <Select value={adForm.vendor_id || "__none__"} onValueChange={(v) => setAdForm({ ...adForm, vendor_id: v === "__none__" ? "" : v })}>
                         <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__none__">— None —</SelectItem>
                           {vendors.map(v => (
                             <SelectItem key={v.id} value={v.id}>{v.business_name}</SelectItem>
                           ))}
@@ -684,70 +777,170 @@ const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
-                    <Textarea value={adDescription} onChange={e => setAdDescription(e.target.value)} placeholder="Short ad description..." rows={2} />
+                    <Textarea value={adForm.description} onChange={e => setAdForm({ ...adForm, description: e.target.value })} placeholder="Short ad description..." rows={2} />
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>CTA Button Text</Label>
+                      <Input value={adForm.cta_text} onChange={e => setAdForm({ ...adForm, cta_text: e.target.value })} placeholder="Learn more" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CTA Link</Label>
+                      <Input value={adForm.cta_link} onChange={e => setAdForm({ ...adForm, cta_link: e.target.value })} placeholder="https://... or /vendors" />
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>Position</Label>
+                      <Select value={adForm.position} onValueChange={(v) => setAdForm({ ...adForm, position: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="below_hero">Below Hero</SelectItem>
+                          <SelectItem value="sidebar">Sidebar</SelectItem>
+                          <SelectItem value="footer">Footer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Display Priority</Label>
+                      <Input type="number" value={adForm.priority} onChange={e => setAdForm({ ...adForm, priority: e.target.value })} placeholder="0" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input type="date" value={adForm.start_date} onChange={e => setAdForm({ ...adForm, start_date: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input type="date" value={adForm.end_date} onChange={e => setAdForm({ ...adForm, end_date: e.target.value })} />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Media (Image or Video)</Label>
+                    <Label>Banner Image / Video *</Label>
                     <input ref={adFileRef} type="file" accept="image/*,video/*" hidden onChange={handleAdUpload} />
-                    <div className="flex gap-3 items-center">
-                      <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading}>
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <Button variant="outline" onClick={() => adFileRef.current?.click()} disabled={uploading} type="button">
                         <ImageIcon className="w-4 h-4 mr-2" />{uploading ? "Uploading..." : "Upload Media"}
                       </Button>
-                      {adMediaUrl && <Badge variant="secondary">✓ Media ready</Badge>}
+                      {adForm.media_url && <Badge variant="secondary">✓ Media ready</Badge>}
                     </div>
-                    {adMediaUrl && (
-                      <div className="mt-2 rounded-lg overflow-hidden max-w-xs">
-                        {adMediaType === "video" ? (
-                          <video src={adMediaUrl} className="w-full h-32 object-cover" controls />
+                    {adForm.media_url && (
+                      <div className="mt-2 rounded-lg overflow-hidden max-w-xs border border-border">
+                        {adForm.media_type === "video" ? (
+                          <video src={adForm.media_url} className="w-full h-32 object-cover" controls />
                         ) : (
-                          <img src={adMediaUrl} alt="Preview" className="w-full h-32 object-cover" />
+                          <img src={adForm.media_url} alt="Preview" className="w-full h-32 object-cover" />
                         )}
                       </div>
                     )}
                   </div>
-                  <Button onClick={publishAd} disabled={!adTitle || !adMediaUrl}>
-                    <Megaphone className="w-4 h-4 mr-2" />Publish Ad
-                  </Button>
+                  <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
+                    <Button onClick={() => saveAd(true)} disabled={!adForm.title || !adForm.media_url}>
+                      <Megaphone className="w-4 h-4 mr-2" />{editingAdId ? "Update & Publish" : "Publish"}
+                    </Button>
+                    <Button variant="outline" onClick={() => saveAd(false)} disabled={!adForm.title || !adForm.media_url}>
+                      Save as Draft
+                    </Button>
+                    {adForm.media_url && (
+                      <Button variant="ghost" type="button" onClick={() => setPreviewAd({ ...adForm })}>
+                        <Eye className="w-4 h-4 mr-1" />Preview
+                      </Button>
+                    )}
+                    {editingAdId && (
+                      <Button variant="ghost" onClick={resetAdForm}>Cancel edit</Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card className="mt-6">
-                <CardHeader><CardTitle className="text-lg">Active Advertisements ({ads.length})</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
+                    <span>All Advertisements ({ads.length})</span>
+                    <div className="flex gap-2 text-xs">
+                      <Badge variant="default">{ads.filter(a => a.is_published && a.is_active).length} live</Badge>
+                      <Badge variant="secondary">{ads.filter(a => !a.is_published).length} draft</Badge>
+                      <Badge variant="outline">{ads.filter(a => a.is_published && !a.is_active).length} inactive</Badge>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {ads.map(ad => (
-                      <div key={ad.id} className="flex items-center justify-between gap-4 p-4 bg-muted rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-16 h-12 rounded overflow-hidden flex-shrink-0">
+                    {ads.map(ad => {
+                      const live = ad.is_published && ad.is_active;
+                      return (
+                      <div key={ad.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-20 h-14 rounded overflow-hidden flex-shrink-0">
                             {ad.media_type === "video" ? (
                               <video src={ad.media_url} className="w-full h-full object-cover" />
                             ) : (
                               <img src={ad.media_url} alt="" className="w-full h-full object-cover" />
                             )}
                           </div>
-                          <div>
-                            <p className="font-medium text-foreground text-sm">{ad.title}</p>
-                            <p className="text-xs text-muted-foreground">{ad.description}</p>
-                            <Badge variant={ad.is_active ? "default" : "secondary"} className="text-xs mt-1">
-                              {ad.is_active ? "Active" : "Inactive"}
-                            </Badge>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">{ad.title}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-md">{ad.description}</p>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              <Badge variant={live ? "default" : ad.is_published ? "outline" : "secondary"} className="text-xs">
+                                {live ? "Live" : ad.is_published ? "Inactive" : "Draft"}
+                              </Badge>
+                              {ad.position && <Badge variant="outline" className="text-xs">{ad.position}</Badge>}
+                              {ad.priority > 0 && <Badge variant="outline" className="text-xs">P{ad.priority}</Badge>}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => toggleAdActive(ad.id, !ad.is_active)}>
-                            {ad.is_active ? "Deactivate" : "Activate"}
-                          </Button>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" variant="ghost" onClick={() => setPreviewAd(ad)}><Eye className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => openEditAd(ad)}><PenLine className="w-4 h-4 mr-1" />Edit</Button>
+                          {ad.is_published ? (
+                            <Button size="sm" variant="outline" onClick={() => toggleAdPublished(ad.id, false)}>Unpublish</Button>
+                          ) : (
+                            <Button size="sm" onClick={() => toggleAdPublished(ad.id, true)}>Publish</Button>
+                          )}
+                          {ad.is_published && (
+                            <Button size="sm" variant="outline" onClick={() => toggleAdActive(ad.id, !ad.is_active)}>
+                              {ad.is_active ? "Deactivate" : "Activate"}
+                            </Button>
+                          )}
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteAd(ad.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    );})}
                     {ads.length === 0 && <p className="text-center py-8 text-muted-foreground">No advertisements yet</p>}
                   </div>
                 </CardContent>
               </Card>
+
+              <Dialog open={!!previewAd} onOpenChange={(o) => !o && setPreviewAd(null)}>
+                <DialogContent className="w-[95vw] max-w-2xl">
+                  <DialogHeader><DialogTitle>Advertisement preview</DialogTitle></DialogHeader>
+                  {previewAd && (
+                    <div className="relative rounded-xl overflow-hidden">
+                      {previewAd.media_type === "video" ? (
+                        <video src={previewAd.media_url} className="w-full h-72 object-cover" controls />
+                      ) : (
+                        <img src={previewAd.media_url} className="w-full h-72 object-cover" alt="" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 p-6 text-primary-foreground">
+                        <h3 className="font-display text-2xl font-bold">{previewAd.title}</h3>
+                        {previewAd.description && <p className="text-sm mt-1 text-primary-foreground/80">{previewAd.description}</p>}
+                        {(previewAd.cta_text || previewAd.cta_link) && (
+                          <span className="inline-flex items-center gap-1 mt-3 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold">
+                            {previewAd.cta_text || "Learn more"} <ExternalLink className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TabsContent>
+
 
 
             {/* Transactions Tab */}
@@ -1004,27 +1197,145 @@ const AdminDashboard = () => {
             </TabsContent>
 
             <TabsContent value="comments">
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Pending Comments ({pendingComments.length})</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {pendingComments.length === 0 && <p className="text-sm text-muted-foreground">No comments waiting for review.</p>}
-                  {pendingComments.map(c => (
-                    <div key={c.id} className="border border-border rounded-lg p-3">
-                      <div className="flex justify-between items-start gap-3 mb-1">
-                        <div>
-                          <p className="text-sm font-medium">{c.author_name} <span className="text-xs text-muted-foreground">on "{c.blog_posts?.title}"</span></p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approveComment(c.id, true)}><CheckCircle className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => deleteComment(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground/80">{c.content.replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+              {(() => {
+                const stats = {
+                  total: allComments.length,
+                  approved: allComments.filter(c => c.approved && !c.hidden).length,
+                  pending: allComments.filter(c => !c.approved && !c.hidden).length,
+                  hidden: allComments.filter(c => c.hidden).length,
+                  defaults: allComments.filter(c => c.wp_comment_id != null).length,
+                };
+                const q = commentSearch.trim().toLowerCase();
+                const filtered = allComments.filter((c) => {
+                  const status = c.hidden ? "hidden" : c.approved ? "approved" : "pending";
+                  if (commentFilter !== "all" && commentFilter !== status) return false;
+                  if (!q) return true;
+                  return (
+                    (c.author_name || "").toLowerCase().includes(q) ||
+                    (c.author_email || "").toLowerCase().includes(q) ||
+                    (c.content || "").toLowerCase().includes(q) ||
+                    (c.blog_posts?.title || "").toLowerCase().includes(q)
+                  );
+                });
+                const allSelected = filtered.length > 0 && filtered.every(c => selectedCommentIds.has(c.id));
+                const toggleAll = () => {
+                  const next = new Set(selectedCommentIds);
+                  if (allSelected) filtered.forEach(c => next.delete(c.id));
+                  else filtered.forEach(c => next.add(c.id));
+                  setSelectedCommentIds(next);
+                };
+                const toggleOne = (id: string) => {
+                  const next = new Set(selectedCommentIds);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  setSelectedCommentIds(next);
+                };
+                return (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                      {[
+                        { label: "Total", value: stats.total, color: "text-foreground" },
+                        { label: "Approved", value: stats.approved, color: "text-green-600" },
+                        { label: "Pending", value: stats.pending, color: "text-accent" },
+                        { label: "Hidden", value: stats.hidden, color: "text-destructive" },
+                      ].map((s) => (
+                        <Card key={s.label}><CardContent className="pt-5">
+                          <p className="text-xs text-muted-foreground">{s.label}</p>
+                          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                        </CardContent></Card>
+                      ))}
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+
+                    <Card>
+                      <CardHeader className="space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <CardTitle className="text-lg">Comments ({filtered.length})</CardTitle>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button size="sm" variant="outline" onClick={deleteDefaultComments} disabled={stats.defaults === 0}>
+                              <Trash2 className="w-4 h-4 mr-1" />Delete default ({stats.defaults})
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={deleteAllComments} disabled={stats.total === 0}>
+                              Delete all comments
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <div className="relative flex-1 min-w-[220px]">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input value={commentSearch} onChange={e => setCommentSearch(e.target.value)} placeholder="Search author, email, story or content..." className="pl-9" />
+                          </div>
+                          <Select value={commentFilter} onValueChange={(v: any) => setCommentFilter(v)}>
+                            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All statuses</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="hidden">Hidden</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {selectedCommentIds.size > 0 && (
+                          <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                            <span className="text-sm">{selectedCommentIds.size} selected</span>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => setSelectedCommentIds(new Set())}>Clear</Button>
+                              <Button size="sm" variant="destructive" onClick={() => bulkDeleteComments(Array.from(selectedCommentIds))}>
+                                <Trash2 className="w-4 h-4 mr-1" />Delete selected
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {filtered.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No comments match your filters.</p>}
+                        {filtered.length > 0 && (
+                          <div className="flex items-center gap-2 pb-2 border-b border-border">
+                            <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                            <span className="text-xs text-muted-foreground">Select all on page</span>
+                          </div>
+                        )}
+                        {filtered.slice(0, 200).map(c => {
+                          const status = c.hidden ? "hidden" : c.approved ? "approved" : "pending";
+                          return (
+                            <div key={c.id} className="border border-border rounded-lg p-3">
+                              <div className="flex justify-between items-start gap-3 mb-2">
+                                <div className="flex items-start gap-2 min-w-0">
+                                  <Checkbox className="mt-1" checked={selectedCommentIds.has(c.id)} onCheckedChange={() => toggleOne(c.id)} />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                      {c.author_name}
+                                      {c.author_email && <span className="text-xs text-muted-foreground ml-2">&lt;{c.author_email}&gt;</span>}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      on <Link className="underline" to={`/stories/${c.blog_posts?.slug || ""}`} target="_blank">{c.blog_posts?.title || "—"}</Link>
+                                      {" · "}{new Date(c.created_at).toLocaleDateString()}
+                                      {" · "}<Badge variant={status === "approved" ? "default" : status === "hidden" ? "destructive" : "secondary"} className="text-[10px] ml-1 capitalize">{status}</Badge>
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  {status !== "approved" && (
+                                    <Button size="sm" variant="outline" onClick={() => approveComment(c.id, true)} title="Approve"><CheckCircle className="w-4 h-4" /></Button>
+                                  )}
+                                  {status !== "hidden" && (
+                                    <Button size="sm" variant="outline" onClick={() => hideComment(c.id)} title="Hide"><EyeOff className="w-4 h-4" /></Button>
+                                  )}
+                                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteComment(c.id)} title="Delete permanently"><Trash2 className="w-4 h-4" /></Button>
+                                </div>
+                              </div>
+                              <p className="text-sm text-foreground/80 pl-6">{(c.content || "").replace(/<[^>]+>/g, "").slice(0, 300)}</p>
+                            </div>
+                          );
+                        })}
+                        {filtered.length > 200 && (
+                          <p className="text-xs text-muted-foreground text-center pt-3">Showing first 200 of {filtered.length}. Refine your search to see more.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
             </TabsContent>
+
 
             <TabsContent value="real-weddings">
               <Card>
