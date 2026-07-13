@@ -17,12 +17,17 @@ export type Database = {
       advertisements: {
         Row: {
           created_at: string
+          cta_link: string | null
+          cta_text: string | null
           description: string | null
           end_date: string | null
           id: string
           is_active: boolean
+          is_published: boolean
           media_type: string
           media_url: string
+          position: string
+          priority: number
           start_date: string | null
           title: string
           updated_at: string
@@ -30,12 +35,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_published?: boolean
           media_type?: string
           media_url: string
+          position?: string
+          priority?: number
           start_date?: string | null
           title: string
           updated_at?: string
@@ -43,12 +53,17 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_published?: boolean
           media_type?: string
           media_url?: string
+          position?: string
+          priority?: number
           start_date?: string | null
           title?: string
           updated_at?: string
@@ -185,6 +200,7 @@ export type Database = {
           author_name: string
           content: string
           created_at: string
+          hidden: boolean
           id: string
           parent_wp_comment_id: number | null
           post_id: string
@@ -197,6 +213,7 @@ export type Database = {
           author_name: string
           content: string
           created_at?: string
+          hidden?: boolean
           id?: string
           parent_wp_comment_id?: number | null
           post_id: string
@@ -209,6 +226,7 @@ export type Database = {
           author_name?: string
           content?: string
           created_at?: string
+          hidden?: boolean
           id?: string
           parent_wp_comment_id?: number | null
           post_id?: string
