@@ -257,12 +257,12 @@ const VendorProfile = () => {
                       <Calendar className="w-4 h-4" /> Book Now
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>
+                  <DialogContent className="w-[95vw] max-w-lg sm:max-w-xl max-h-[92vh] overflow-y-auto p-5 sm:p-6 rounded-2xl">
+                    <DialogHeader className="mb-1">
+                      <DialogTitle className="font-display text-xl sm:text-2xl">
                         {paymentStep === "booking" && `Book ${vendor.business_name}`}
                         {paymentStep === "payment" && "Complete Payment"}
-                        {paymentStep === "confirmation" && "Booking Confirmed! 🎉"}
+                        {paymentStep === "confirmation" && "Booking Confirmed 🎉"}
                       </DialogTitle>
                     </DialogHeader>
 
