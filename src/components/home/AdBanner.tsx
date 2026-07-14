@@ -35,172 +35,92 @@ const isLive = (a: Ad) => {
 
 const hrefFor = (ad: Ad) => ad.cta_link || (ad.vendor_id ? `/vendor/${ad.vendor_id}` : null);
 
-const AdMedia = ({ ad, onVideoEnded }: { ad: Ad; onVideoEnded?: () => void }) => {
-  const [orientation, setOrientation] = useState<"portrait" | "landscape" | "square">("landscape");
-  const objectFitClass =
-    orientation === "portrait" ? "object-contain bg-black/90" : "object-cover";
+type Orientation = "portrait" | "landscape" | "square";
 
-  if (ad.media_type === "video") {
-    return (
-      <video
-        src={ad.media_url}
-        className={`w-full h-full ${objectFitClass} transition-transform duration-700 group-hover:scale-[1.02]`}
-        autoPlay
-        muted
-        playsInline
-        preload="metadata"
-        onLoadedMetadata={(e) => {
-          const v = e.currentTarget;
-          const r = v.videoWidth / v.videoHeight;
-          setOrientation(r < 0.95 ? "portrait" : r > 1.05 ? "landscape" : "square");
-        }}
-        onEnded={onVideoEnded}
-      />
-    );
-  }
-  return (
-    <img
-      src={ad.media_url}
-      alt={ad.title}
-      className={`w-full h-full ${objectFitClass} transition-transform duration-700 group-hover:scale-[1.03]`}
-      loading="lazy"
-      onLoad={(e) => {
-        const img = e.currentTarget;
-        const r = img.naturalWidth / img.naturalHeight;
-        setOrientation(r < 0.95 ? "portrait" : r > 1.05 ? "landscape" : "square");
-      }}
-    />
-  );
-};
-
-const AdCard = ({ ads }: { ads: Ad[] }) => {
-  const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const touchX = useRef<number | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const ad = ads[idx];
-  const isVideo = ad?.media_type === "video";
-  const multiple = ads.length > 1;
-
-  const next = useCallback(() => setIdx((i) => (i + 1) % ads.length), [ads.length]);
-  const prev = useCallback(() => setIdx((i) => (i - 1 + ads.length) % ads.length), [ads.length]);
+const AdSlide = ({
+  ad,
+  active,
+  onVideoEnded,
+}: {
+  ad: Ad;
+  active: boolean;
+  onVideoEnded: () => void;
+}) => {
+  const [orientation, setOrientation] = useState<Orientation>("landscape");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    if (timer.current) clearTimeout(timer.current);
-    if (!multiple || paused || isVideo) return;
-    timer.current = setTimeout(next, AUTO_MS);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [idx, multiple, paused, isVideo, next]);
-
-  // Preload next image
-  useEffect(() => {
-    if (!multiple) return;
-    const nxt = ads[(idx + 1) % ads.length];
-    if (nxt && nxt.media_type !== "video") {
-      const im = new Image();
-      im.src = nxt.media_url;
+    const v = videoRef.current;
+    if (!v) return;
+    if (active) {
+      v.currentTime = 0;
+      v.play().catch(() => {});
+    } else {
+      v.pause();
     }
-  }, [idx, ads, multiple]);
+  }, [active]);
 
-  if (!ad) return null;
-
-  const href = hrefFor(ad);
-  const inner = (
-    <div className="group relative w-full h-full flex flex-col">
-      <div className="relative w-full aspect-[4/5] sm:aspect-[3/4] md:aspect-[4/5] bg-muted overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={ad.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0"
-          >
-            <AdMedia ad={ad} onVideoEnded={multiple ? next : undefined} />
-          </motion.div>
-        </AnimatePresence>
-
-        <div className="absolute top-3 left-3 z-10">
-          <Badge className="bg-background/95 text-foreground border-none text-[10px] tracking-widest uppercase gap-1 shadow-sm">
-            <Sparkles className="w-3 h-3 text-primary" />Sponsored
-          </Badge>
-        </div>
-
-        {multiple && (
-          <>
-            <button
-              onClick={(e) => { e.preventDefault(); prev(); }}
-              aria-label="Previous"
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/85 backdrop-blur border border-border shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground z-10"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => { e.preventDefault(); next(); }}
-              aria-label="Next"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/85 backdrop-blur border border-border shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground z-10"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-              {ads.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={(e) => { e.preventDefault(); setIdx(i); }}
-                  aria-label={`Go to ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-primary" : "w-1.5 bg-background/80"}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-display text-lg md:text-xl font-bold text-foreground leading-snug line-clamp-2 mb-1.5">
-          {ad.title}
-        </h3>
-        {ad.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{ad.description}</p>
-        )}
-        {href && (
-          <span className="mt-auto inline-flex items-center gap-1.5 text-primary text-sm font-semibold group-hover:gap-2.5 transition-all">
-            {ad.cta_text || "Learn more"} <ArrowRight className="w-4 h-4" />
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
-  const wrapperClass =
-    "relative block overflow-hidden rounded-2xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-500 hover:-translate-y-1 h-full";
+  const fit = orientation === "landscape" ? "object-cover" : "object-contain";
 
   return (
-    <div
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => {
-        if (touchX.current === null || !multiple) return;
-        const dx = e.changedTouches[0].clientX - touchX.current;
-        if (Math.abs(dx) > 50) (dx < 0 ? next : prev)();
-        touchX.current = null;
-      }}
-      className="h-full"
-    >
-      {href ? (
-        /^https?:\/\//.test(href) ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className={wrapperClass}>{inner}</a>
-        ) : (
-          <Link to={href} className={wrapperClass}>{inner}</Link>
-        )
+    <div className="relative w-full h-full bg-gradient-to-br from-secondary/60 to-muted/60">
+      {ad.media_type === "video" ? (
+        <video
+          ref={videoRef}
+          src={ad.media_url}
+          className={`w-full h-full ${fit}`}
+          muted
+          playsInline
+          preload="metadata"
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget;
+            const r = v.videoWidth / v.videoHeight;
+            setOrientation(r < 0.95 ? "portrait" : r > 1.05 ? "landscape" : "square");
+          }}
+          onEnded={onVideoEnded}
+        />
       ) : (
-        <div className={wrapperClass}>{inner}</div>
+        <img
+          src={ad.media_url}
+          alt={ad.title}
+          className={`w-full h-full ${fit}`}
+          loading="lazy"
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            const r = img.naturalWidth / img.naturalHeight;
+            setOrientation(r < 0.95 ? "portrait" : r > 1.05 ? "landscape" : "square");
+          }}
+        />
       )}
+
+      {/* Gradient overlay for text legibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+      {/* Sponsored badge */}
+      <div className="absolute top-4 left-4 md:top-6 md:left-6">
+        <Badge className="bg-background/95 text-foreground border-none text-[10px] md:text-xs tracking-[0.25em] uppercase gap-1.5 shadow-md px-3 py-1.5">
+          <Sparkles className="w-3 h-3 text-primary" /> Sponsored
+        </Badge>
+      </div>
+
+      {/* Copy */}
+      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 md:p-12">
+        <div className="max-w-2xl">
+          <h3 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-lg mb-2 md:mb-3">
+            {ad.title}
+          </h3>
+          {ad.description && (
+            <p className="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed line-clamp-2 md:line-clamp-3 drop-shadow mb-4">
+              {ad.description}
+            </p>
+          )}
+          {hrefFor(ad) && (
+            <span className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 md:px-6 md:py-3 rounded-full font-semibold text-sm md:text-base shadow-lg hover:gap-3 transition-all">
+              {ad.cta_text || "Learn more"} <ArrowRight className="w-4 h-4" />
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -208,6 +128,10 @@ const AdCard = ({ ads }: { ads: Ad[] }) => {
 const AdBanner = () => {
   const { t } = useLanguage();
   const [ads, setAds] = useState<Ad[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchX = useRef<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -218,53 +142,134 @@ const AdBanner = () => {
         .eq("is_active", true)
         .order("priority", { ascending: false })
         .order("created_at", { ascending: false });
-      setAds(((data ?? []) as Ad[]).filter(isLive));
+      const live = ((data ?? []) as Ad[]).filter(isLive);
+      setAds(live);
+      setIdx((i) => (i >= live.length ? 0 : i));
     };
     load();
-    const channel = supabase
+    const ch = supabase
       .channel("public-ads")
       .on("postgres_changes", { event: "*", schema: "public", table: "advertisements" }, load)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const cardKeys = ["card_1", "card_2", "card_3"] as const;
-  const grouped = cardKeys.map((k) => ads.filter((a) => {
-    const p = a.position && a.position.startsWith("card_") ? a.position : "card_1";
-    return p === k;
-  }));
-  const totalLive = grouped.reduce((s, g) => s + g.length, 0);
-  if (totalLive === 0) return null;
+  const next = useCallback(() => setIdx((i) => (ads.length ? (i + 1) % ads.length : 0)), [ads.length]);
+  const prev = useCallback(() => setIdx((i) => (ads.length ? (i - 1 + ads.length) % ads.length : 0)), [ads.length]);
+
+  const current = ads[idx];
+  const isVideo = current?.media_type === "video";
+
+  // Auto-advance for images only. Videos advance via onEnded.
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    if (!current || ads.length < 2 || paused || isVideo) return;
+    timer.current = setTimeout(next, AUTO_MS);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [idx, ads.length, paused, isVideo, current, next]);
+
+  // Preload next image
+  useEffect(() => {
+    if (ads.length < 2) return;
+    const nxt = ads[(idx + 1) % ads.length];
+    if (nxt && nxt.media_type !== "video") {
+      const im = new Image();
+      im.src = nxt.media_url;
+    }
+  }, [idx, ads]);
+
+  if (!current) return null;
+
+  const href = hrefFor(current);
+  const multiple = ads.length > 1;
+
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const cls = "block w-full h-full";
+    if (!href) return <div className={cls}>{children}</div>;
+    return /^https?:\/\//.test(href) ? (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{children}</a>
+    ) : (
+      <Link to={href} className={cls}>{children}</Link>
+    );
+  };
 
   return (
-    <section className="py-14 md:py-20 bg-gradient-to-b from-background to-secondary/30">
+    <section className="py-10 md:py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4">
-        <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
+        <div className="flex items-end justify-between mb-6 md:mb-8 flex-wrap gap-3">
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-1">
+            <p className="text-xs tracking-[0.3em] uppercase text-primary font-semibold mb-1.5">
               {t("Featured Partners")}
             </p>
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
               {t("Curated for your wedding")}
             </h2>
           </div>
+          {multiple && (
+            <p className="text-sm text-muted-foreground">
+              {idx + 1} / {ads.length}
+            </p>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {grouped.map((groupAds, i) =>
-            groupAds.length > 0 ? (
+        <div
+          className="group relative w-full overflow-hidden rounded-2xl md:rounded-3xl border border-border shadow-card hover:shadow-card-hover transition-shadow duration-500 bg-card"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
+          onTouchEnd={(e) => {
+            if (touchX.current === null || !multiple) return;
+            const dx = e.changedTouches[0].clientX - touchX.current;
+            if (Math.abs(dx) > 50) (dx < 0 ? next : prev)();
+            touchX.current = null;
+          }}
+        >
+          <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[21/9]">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={cardKeys[i]}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className={i === 2 ? "sm:col-span-2 lg:col-span-1" : ""}
+                key={current.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute inset-0"
               >
-                <AdCard ads={groupAds} />
+                <Wrapper>
+                  <AdSlide ad={current} active onVideoEnded={next} />
+                </Wrapper>
               </motion.div>
-            ) : null
-          )}
+            </AnimatePresence>
+
+            {multiple && (
+              <>
+                <button
+                  onClick={prev}
+                  aria-label="Previous advertisement"
+                  className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/90 backdrop-blur border border-border shadow-lg flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-primary hover:text-primary-foreground hover:scale-110 z-20"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={next}
+                  aria-label="Next advertisement"
+                  className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/90 backdrop-blur border border-border shadow-lg flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-primary hover:text-primary-foreground hover:scale-110 z-20"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                <div className="absolute bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-background/70 backdrop-blur-sm rounded-full px-3 py-2">
+                  {ads.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setIdx(i)}
+                      aria-label={`Go to advertisement ${i + 1}`}
+                      className={`h-1.5 rounded-full transition-all ${i === idx ? "w-8 bg-primary" : "w-1.5 bg-foreground/40 hover:bg-foreground/70"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>
