@@ -444,7 +444,7 @@ const AdminDashboard = () => {
       media_type: ad.media_type || "image",
       cta_text: ad.cta_text || "",
       cta_link: ad.cta_link || "",
-      position: ad.position || "below_hero",
+      position: ad.position || "card_1",
       priority: ad.priority ?? 0,
       start_date: ad.start_date ? ad.start_date.slice(0, 10) : "",
       end_date: ad.end_date ? ad.end_date.slice(0, 10) : "",
