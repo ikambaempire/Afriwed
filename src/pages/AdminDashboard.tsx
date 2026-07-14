@@ -791,13 +791,13 @@ const AdminDashboard = () => {
                   </div>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <Label>Position</Label>
+                      <Label>Placement Card</Label>
                       <Select value={adForm.position} onValueChange={(v) => setAdForm({ ...adForm, position: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="below_hero">Below Hero</SelectItem>
-                          <SelectItem value="sidebar">Sidebar</SelectItem>
-                          <SelectItem value="footer">Footer</SelectItem>
+                          <SelectItem value="card_1">Card 1 (Left)</SelectItem>
+                          <SelectItem value="card_2">Card 2 (Middle)</SelectItem>
+                          <SelectItem value="card_3">Card 3 (Right)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
