@@ -90,7 +90,7 @@ const AdminDashboard = () => {
   // Ad form (create + edit)
   const emptyAdForm = {
     title: "", description: "", vendor_id: "", media_url: "", media_type: "image",
-    cta_text: "", cta_link: "", position: "below_hero", priority: 0,
+    cta_text: "", cta_link: "", position: "card_1", priority: 0,
     start_date: "", end_date: "",
   };
   const [adForm, setAdForm] = useState<any>(emptyAdForm);
@@ -444,7 +444,7 @@ const AdminDashboard = () => {
       media_type: ad.media_type || "image",
       cta_text: ad.cta_text || "",
       cta_link: ad.cta_link || "",
-      position: ad.position || "below_hero",
+      position: ad.position || "card_1",
       priority: ad.priority ?? 0,
       start_date: ad.start_date ? ad.start_date.slice(0, 10) : "",
       end_date: ad.end_date ? ad.end_date.slice(0, 10) : "",
@@ -464,7 +464,7 @@ const AdminDashboard = () => {
       vendor_id: adForm.vendor_id || null,
       cta_text: adForm.cta_text || null,
       cta_link: adForm.cta_link || null,
-      position: adForm.position || "below_hero",
+      position: adForm.position || "card_1",
       priority: Number(adForm.priority) || 0,
       start_date: adForm.start_date || null,
       end_date: adForm.end_date || null,
@@ -791,13 +791,13 @@ const AdminDashboard = () => {
                   </div>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <Label>Position</Label>
+                      <Label>Placement Card</Label>
                       <Select value={adForm.position} onValueChange={(v) => setAdForm({ ...adForm, position: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="below_hero">Below Hero</SelectItem>
-                          <SelectItem value="sidebar">Sidebar</SelectItem>
-                          <SelectItem value="footer">Footer</SelectItem>
+                          <SelectItem value="card_1">Card 1 (Left)</SelectItem>
+                          <SelectItem value="card_2">Card 2 (Middle)</SelectItem>
+                          <SelectItem value="card_3">Card 3 (Right)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
