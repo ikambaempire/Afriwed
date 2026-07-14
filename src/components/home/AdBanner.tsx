@@ -229,7 +229,10 @@ const AdBanner = () => {
   }, []);
 
   const cardKeys = ["card_1", "card_2", "card_3"] as const;
-  const grouped = cardKeys.map((k) => ads.filter((a) => (a.position || "card_1") === k));
+  const grouped = cardKeys.map((k) => ads.filter((a) => {
+    const p = a.position && a.position.startsWith("card_") ? a.position : "card_1";
+    return p === k;
+  }));
   const totalLive = grouped.reduce((s, g) => s + g.length, 0);
   if (totalLive === 0) return null;
 
