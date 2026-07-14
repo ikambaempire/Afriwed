@@ -90,7 +90,7 @@ const AdminDashboard = () => {
   // Ad form (create + edit)
   const emptyAdForm = {
     title: "", description: "", vendor_id: "", media_url: "", media_type: "image",
-    cta_text: "", cta_link: "", position: "below_hero", priority: 0,
+    cta_text: "", cta_link: "", position: "card_1", priority: 0,
     start_date: "", end_date: "",
   };
   const [adForm, setAdForm] = useState<any>(emptyAdForm);
