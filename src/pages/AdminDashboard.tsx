@@ -464,7 +464,7 @@ const AdminDashboard = () => {
       vendor_id: adForm.vendor_id || null,
       cta_text: adForm.cta_text || null,
       cta_link: adForm.cta_link || null,
-      position: adForm.position || "below_hero",
+      position: adForm.position || "card_1",
       priority: Number(adForm.priority) || 0,
       start_date: adForm.start_date || null,
       end_date: adForm.end_date || null,
