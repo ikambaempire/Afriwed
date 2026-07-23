@@ -92,14 +92,9 @@ const Stories = () => {
           </div>
         </section>
 
-        <section className="border-b border-border bg-background/95 backdrop-blur sticky top-16 z-30">
-          <div className="container mx-auto px-4">
-            <StoryCategoriesNav
-              cats={cats}
-              activeCat={activeCat}
-              allLabel={t("All")}
-              moreLabel={t("More")}
-            />
+        <section className="border-b border-border bg-background">
+          <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+            <CategoriesButton cats={cats} activeCat={activeCat} allLabel={t("All")} />
           </div>
         </section>
 
