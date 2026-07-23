@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import TopAdStrip from "@/components/TopAdStrip";
+import afriwedLogo from "@/assets/afriwed-logo.png";
 import { cn } from "@/lib/utils";
 
 type CatRow = { id: string; slug: string; name: string; count: number };
