@@ -146,7 +146,6 @@ const Footer = () => {
             <li><Link to="/author-apply" className="hover:text-primary transition-colors">{t("Become an Author")}</Link></li>
             <li><Link to="/submit" className="hover:text-primary transition-colors">{t("Submit Your Wedding")}</Link></li>
             <li><Link to="/submit?type=vendor" className="hover:text-primary transition-colors">{t("Submit a Listing")}</Link></li>
-            <li><Link to="/auth?tab=vendor" className="hover:text-primary transition-colors">{t("List Your Business")}</Link></li>
           </ul>
         </div>
 
