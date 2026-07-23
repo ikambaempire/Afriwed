@@ -36,10 +36,9 @@ const Header = () => {
           <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             {t("Find Vendors")}
           </Link>
-          <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            {t("Real Weddings")}
-          </Link>
           <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            {t("Stories")}
+          </Link>
             {t("Stories")}
           </Link>
           <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
@@ -108,9 +107,6 @@ const Header = () => {
           <nav className="flex flex-col gap-3 py-3">
             <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               {t("Find Vendors")}
-            </Link>
-            <Link to="/real-weddings" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              {t("Real Weddings")}
             </Link>
             <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               {t("Stories")}

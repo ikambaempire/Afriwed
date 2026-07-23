@@ -28,12 +28,12 @@ const StoryCategoriesNav = ({ cats, activeCat, allLabel, moreLabel }: Props) => 
     activeCat === "all" ? allLabel : cats.find((c) => c.slug === activeCat)?.name || allLabel;
 
   const chipBase =
-    "whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50";
-  const chipActive = "bg-primary text-primary-foreground shadow-md scale-[1.02]";
+    "whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50";
+  const chipActive = "bg-primary text-primary-foreground shadow-sm";
   const chipIdle = "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary";
 
   return (
-    <div className="py-4">
+    <div className="py-2">
       {/* Mobile: dropdown */}
       <div className="md:hidden relative" ref={menuRef}>
         <button
