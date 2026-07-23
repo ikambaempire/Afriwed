@@ -73,6 +73,13 @@ const Header = () => {
     <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <TopAdStrip hidden={scrolled} />
 
+      {/* Logo bar */}
+      <div className="container mx-auto px-4 flex items-center justify-center py-3 border-b border-border/50">
+        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center">
+          <img src={afriwedLogo} alt="AfriWed" className="h-14 md:h-20 w-auto object-contain" />
+        </Link>
+      </div>
+
       <div className="container mx-auto px-4 py-3 flex items-center gap-3">
         {/* Categories dropdown - top left */}
         <div className="relative shrink-0" ref={menuRef}>
