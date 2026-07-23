@@ -74,9 +74,9 @@ const Header = () => {
       <TopAdStrip hidden={scrolled} />
 
       {/* Logo bar */}
-      <div className="container mx-auto px-4 flex items-center justify-center py-3 border-b border-border/50">
-        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center">
-          <img src={afriwedLogo} alt="AfriWed" className="h-14 md:h-20 w-auto object-contain" />
+      <div className="container mx-auto px-4 flex items-center justify-center py-4 border-b border-border/50">
+        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center w-full max-w-md justify-center">
+          <img src={afriwedLogo} alt="AfriWed" className="w-full h-auto max-h-40 object-contain" />
         </Link>
       </div>
 
