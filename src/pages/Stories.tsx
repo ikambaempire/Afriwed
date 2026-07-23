@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Search, Calendar, User } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import StoryCategoriesNav from "@/components/stories/StoryCategoriesNav";
+import CategoriesButton from "@/components/stories/CategoriesButton";
 
 type Post = {
   id: string; slug: string; title: string; excerpt: string;
