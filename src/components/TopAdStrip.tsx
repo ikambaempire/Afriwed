@@ -62,47 +62,66 @@ const TopAdStrip = ({ hidden }: Props) => {
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     if (ads.length < 2 || hidden) return;
-    timer.current = setTimeout(next, 5000);
+    const current = ads[idx];
+    const delay = current?.media_type === "video" ? 12000 : 6000;
+    timer.current = setTimeout(next, delay);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [idx, ads.length, hidden, next]);
+  }, [idx, ads, hidden, next]);
 
   const current = ads[idx];
+  const href = current ? hrefFor(current) : null;
+  const isVideo = current?.media_type === "video";
+
+  const media = current && (
+    isVideo ? (
+      <video
+        src={current.media_url}
+        className="h-full w-auto object-contain rounded-md shadow-sm bg-black"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+    ) : current.media_url ? (
+      <img
+        src={current.media_url}
+        alt=""
+        className="h-full w-auto object-contain rounded-md shadow-sm bg-muted"
+        loading="lazy"
+      />
+    ) : null
+  );
 
   const inner = current ? (
-    <div className="flex items-center gap-3 h-full">
-      <span className="hidden sm:inline-flex items-center gap-1 text-[10px] tracking-[0.25em] uppercase font-semibold text-primary shrink-0">
-        <Sparkles className="w-3 h-3" /> Sponsored
-      </span>
-      {current.media_url && current.media_type !== "video" && (
-        <img
-          src={current.media_url}
-          alt=""
-          className="hidden sm:block h-6 w-10 object-cover rounded-sm shrink-0"
-          loading="lazy"
-        />
-      )}
-      <span className="truncate text-xs md:text-sm font-medium text-foreground">
-        {current.title}
-        {current.description && <span className="hidden md:inline text-muted-foreground"> — {current.description}</span>}
-      </span>
-      {hrefFor(current) && (
-        <span className="ml-auto hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
+    <div className="flex items-center gap-4 h-full py-2">
+      {media && <div className="h-full flex-shrink-0 flex items-center">{media}</div>}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.25em] uppercase font-semibold text-primary">
+          <Sparkles className="w-3 h-3" /> Sponsored
+        </span>
+        <span className="truncate text-sm md:text-base font-semibold text-foreground leading-tight">
+          {current.title}
+        </span>
+        {current.description && (
+          <span className="hidden sm:block truncate text-xs text-muted-foreground">{current.description}</span>
+        )}
+      </div>
+      {href && (
+        <span className="hidden sm:inline-flex items-center gap-1 text-xs md:text-sm font-semibold text-primary shrink-0 whitespace-nowrap">
           {current.cta_text || "Learn more"} <ArrowRight className="w-3 h-3" />
         </span>
       )}
     </div>
   ) : null;
 
-  const href = current ? hrefFor(current) : null;
-
   return (
     <div
       className={`overflow-hidden bg-secondary/60 border-b border-border transition-all duration-300 ease-out ${
-        hidden || !current ? "max-h-0 opacity-0" : "max-h-11 opacity-100"
+        hidden || !current ? "max-h-0 opacity-0" : "max-h-32 opacity-100"
       }`}
       aria-hidden={hidden || !current}
     >
-      <div className="container mx-auto px-4 h-11">
+      <div className="container mx-auto px-4 h-24 md:h-28">
         {current && (
           href ? (
             /^https?:\/\//.test(href) ? (
