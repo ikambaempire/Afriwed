@@ -1,14 +1,25 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine, Languages } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine, Languages, Search, LayoutGrid, ChevronDown, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
+import { supabase } from "@/integrations/supabase/client";
 import TopAdStrip from "@/components/TopAdStrip";
+import logo from "@/assets/afriwed-logo.png";
+import { cn } from "@/lib/utils";
+
+type CatRow = { id: string; slug: string; name: string; count: number };
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [catsOpen, setCatsOpen] = useState(false);
+  const [cats, setCats] = useState<CatRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { user, isAdmin, isVendor, isAuthor, signOut } = useAuth();
   const { lang, setLang, t } = useLanguage();
 
@@ -19,61 +30,81 @@ const Header = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setCatsOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const { data: c } = await supabase.from("blog_categories").select("id, slug, name");
+      const { data: posts } = await supabase
+        .from("blog_posts")
+        .select("id, blog_post_categories(category_id)")
+        .eq("status", "publish")
+        .eq("language", lang);
+      const tally: Record<string, number> = {};
+      (posts ?? []).forEach((p: any) => {
+        (p.blog_post_categories ?? []).forEach((r: any) => {
+          tally[r.category_id] = (tally[r.category_id] || 0) + 1;
+        });
+      });
+      const rows: CatRow[] = (c ?? [])
+        .map((x: any) => ({ ...x, count: tally[x.id] || 0 }))
+        .filter((x: CatRow) => x.count > 0)
+        .sort((a, b) => b.count - a.count);
+      setCats(rows);
+      setTotal((posts ?? []).length);
+    })();
+  }, [lang]);
+
+  const top5 = useMemo(() => cats.slice(0, 5), [cats]);
+
+  const onSearch = (e: FormEvent) => {
+    e.preventDefault();
+    const q = search.trim();
+    if (!q) return;
+    navigate(`/stories?q=${encodeURIComponent(q)}`);
+    setIsOpen(false);
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
+    <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <TopAdStrip hidden={scrolled} />
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <Heart className="w-6 h-6 text-primary fill-primary" />
-          <span className="font-display text-xl font-bold text-foreground tracking-tight">
-            Afriwedd
-          </span>
-          <span className="text-xs font-sans text-muted-foreground hidden sm:inline">Africa</span>
+
+      {/* Top row: logo + search + auth + language */}
+      <div className="container mx-auto px-4 py-3 md:py-4 flex items-center gap-4">
+        <Link to="/" className="flex items-center shrink-0">
+          <img src={logo} alt="AfriWed" className="h-10 md:h-14 w-auto" />
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            {t("Find Vendors")}
-          </Link>
-          <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            {t("Stories")}
-          </Link>
-          <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            {t("Plan Wedding")}
-          </Link>
-          {user && (
-            <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <MessageCircle className="w-4 h-4 inline mr-1" />{t("Messages")}
-            </Link>
-          )}
-          {isAuthor && (
-            <Link to="/author-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <PenLine className="w-4 h-4 inline mr-1" />{t("Author")}
-            </Link>
-          )}
-          {isVendor && (
-            <Link to="/vendor-dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
-            </Link>
-          )}
-          {isAdmin && (
-            <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              <ShieldCheck className="w-4 h-4 inline mr-1" />{t("Admin")}
-            </Link>
-          )}
-        </nav>
+        <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-xl mx-auto relative">
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("Search stories...")}
+            className="w-full h-11 pl-11 pr-24 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+          />
+          <button
+            type="submit"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-4 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
+          >
+            {t("Search")}
+          </button>
+        </form>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
             <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
             <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
           </div>
           {user ? (
-            <>
-              <span className="text-sm text-muted-foreground">{user.email}</span>
-              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
-            </>
+            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild><Link to="/auth">{t("Sign In")}</Link></Button>
@@ -85,30 +116,134 @@ const Header = () => {
         {/* Mobile toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 text-foreground"
+          className="md:hidden ml-auto p-2 text-foreground"
           aria-label="Toggle menu"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
+      {/* Bottom nav row: categories button + top 5 + extra links */}
+      <div className="hidden md:block border-t border-border bg-card">
+        <div className="container mx-auto px-4">
+          <nav className="flex items-center gap-1 h-12 overflow-x-auto">
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setCatsOpen((o) => !o)}
+                aria-haspopup="listbox"
+                aria-expanded={catsOpen}
+                className="inline-flex items-center gap-2 px-4 h-9 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span>{t("Categories")}</span>
+                <ChevronDown className={cn("w-4 h-4 transition-transform", catsOpen && "rotate-180")} />
+              </button>
+
+              {catsOpen && (
+                <div
+                  role="listbox"
+                  className="absolute z-50 mt-2 left-0 w-[640px] max-w-[95vw] bg-popover border border-border rounded-2xl shadow-xl p-2 animate-in fade-in-0 zoom-in-95"
+                >
+                  <div className="max-h-[70vh] overflow-y-auto grid grid-cols-2 gap-1">
+                    <Link
+                      to="/stories"
+                      onClick={() => setCatsOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-muted"
+                    >
+                      <span>{t("All")}</span>
+                      <span className="text-xs text-muted-foreground">{total}</span>
+                    </Link>
+                    {cats.map((c) => (
+                      <Link
+                        key={c.id}
+                        to={`/stories?category=${c.slug}`}
+                        onClick={() => setCatsOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-muted"
+                      >
+                        <span className="truncate">{c.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2 shrink-0">{c.count}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <span className="w-px h-6 bg-border mx-2" />
+
+            {top5.map((c) => (
+              <Link
+                key={c.id}
+                to={`/stories?category=${c.slug}`}
+                className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap"
+              >
+                {c.name}
+              </Link>
+            ))}
+
+            <span className="w-px h-6 bg-border mx-2" />
+
+            <Link to="/stories" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+              {t("Stories")}
+            </Link>
+            <Link to="/planning" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+              {t("Plan Wedding")}
+            </Link>
+            {user && (
+              <Link to="/messages" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+                <MessageCircle className="w-4 h-4 inline mr-1" />{t("Messages")}
+              </Link>
+            )}
+            {isAuthor && (
+              <Link to="/author-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+                <PenLine className="w-4 h-4 inline mr-1" />{t("Author")}
+              </Link>
+            )}
+            {isVendor && (
+              <Link to="/vendor-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+                <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin" className="px-3 h-9 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+                <ShieldCheck className="w-4 h-4 inline mr-1" />{t("Admin")}
+              </Link>
+            )}
+          </nav>
+        </div>
+      </div>
+
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden bg-card border-b border-border px-4 pb-4 animate-fade-in">
-          <div className="flex items-center justify-between py-3 border-b border-border">
+          <form onSubmit={onSearch} className="relative mt-3">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("Search stories...")}
+              className="w-full h-11 pl-11 pr-4 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </form>
+
+          <div className="flex items-center justify-between py-3 mt-2 border-b border-border">
             <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1"><Languages className="w-3.5 h-3.5" />{t("Language")}</span>
             <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium">
               <button onClick={() => setLang("en")} className={`px-3 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
               <button onClick={() => setLang("rw")} className={`px-3 py-1 ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>RW</button>
             </div>
           </div>
+
           <nav className="flex flex-col gap-3 py-3">
-            <Link to="/vendors" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
-              {t("Find Vendors")}
-            </Link>
             <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               {t("Stories")}
             </Link>
+            {top5.map((c) => (
+              <Link key={c.id} to={`/stories?category=${c.slug}`} className="text-sm font-medium text-muted-foreground hover:text-primary flex justify-between" onClick={() => setIsOpen(false)}>
+                <span>{c.name}</span><span className="text-xs opacity-60">{c.count}</span>
+              </Link>
+            ))}
             <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setIsOpen(false)}>
               {t("Plan Wedding")}
             </Link>
