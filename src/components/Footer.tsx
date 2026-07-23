@@ -169,13 +169,18 @@ const Footer = () => {
         <p className="text-xs text-primary-foreground/40">
           © {new Date().getFullYear()} Afriwedd. {t("Crafted in Africa. All rights reserved.")}
         </p>
-        <Link
-          to="/install"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          {t("Download the App")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/auth" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary-foreground/20 text-primary-foreground text-xs font-medium hover:bg-primary-foreground/10 transition-opacity">
+            {t("Sign In")}
+          </Link>
+          <Link
+            to="/install"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            {t("Download the App")}
+          </Link>
+        </div>
       </div>
     </div>
   </footer>
