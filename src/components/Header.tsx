@@ -39,8 +39,6 @@ const Header = () => {
           <Link to="/stories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             {t("Stories")}
           </Link>
-            {t("Stories")}
-          </Link>
           <Link to="/planning" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             {t("Plan Wedding")}
           </Link>
