@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Search, Calendar, User } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import StoryCategoriesNav from "@/components/stories/StoryCategoriesNav";
+import CategoriesButton from "@/components/stories/CategoriesButton";
 
 type Post = {
   id: string; slug: string; title: string; excerpt: string;
@@ -92,14 +92,9 @@ const Stories = () => {
           </div>
         </section>
 
-        <section className="border-b border-border bg-background/95 backdrop-blur sticky top-16 z-30">
-          <div className="container mx-auto px-4">
-            <StoryCategoriesNav
-              cats={cats}
-              activeCat={activeCat}
-              allLabel={t("All")}
-              moreLabel={t("More")}
-            />
+        <section className="border-b border-border bg-background">
+          <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+            <CategoriesButton cats={cats} activeCat={activeCat} allLabel={t("All")} />
           </div>
         </section>
 
