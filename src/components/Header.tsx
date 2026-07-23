@@ -74,103 +74,105 @@ const Header = () => {
       <TopAdStrip hidden={scrolled} />
 
       <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-        {/* Logo on top left */}
-        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
-          <img src={afriwedLogo} alt="AfriWed" className="h-12 w-auto object-contain" />
-        </Link>
+        {/* Left: Logo + Categories */}
+        <div className="flex items-center gap-3 shrink-0">
+          <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
+            <img src={afriwedLogo} alt="AfriWed" className="h-16 sm:h-20 w-auto object-contain" />
+          </Link>
 
-        {/* Categories dropdown - top left */}
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            onClick={() => setCatsOpen((o) => !o)}
-            aria-haspopup="listbox"
-            aria-expanded={catsOpen}
-            className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("Categories")}</span>
-            <ChevronDown className={cn("w-4 h-4 transition-transform", catsOpen && "rotate-180")} />
-          </button>
-
-          {catsOpen && (
-            <div
-              role="listbox"
-              className="absolute z-50 mt-2 left-0 w-[640px] max-w-[95vw] bg-popover border border-border rounded-2xl shadow-xl p-2 animate-in fade-in-0 zoom-in-95"
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              onClick={() => setCatsOpen((o) => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={catsOpen}
+              className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
             >
-              <div className="max-h-[70vh] overflow-y-auto grid grid-cols-2 gap-1">
-                <Link
-                  to="/stories"
-                  onClick={() => setCatsOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-muted"
-                >
-                  <span>{t("All")}</span>
-                  <span className="text-xs text-muted-foreground">{total}</span>
-                </Link>
-                {cats.map((c) => (
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("Categories")}</span>
+              <ChevronDown className={cn("w-4 h-4 transition-transform", catsOpen && "rotate-180")} />
+            </button>
+
+            {catsOpen && (
+              <div
+                role="listbox"
+                className="absolute z-50 mt-2 left-0 w-[640px] max-w-[95vw] bg-popover border border-border rounded-2xl shadow-xl p-2 animate-in fade-in-0 zoom-in-95"
+              >
+                <div className="max-h-[70vh] overflow-y-auto grid grid-cols-2 gap-1">
                   <Link
-                    key={c.id}
-                    to={`/stories?category=${c.slug}`}
+                    to="/stories"
                     onClick={() => setCatsOpen(false)}
                     className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-muted"
                   >
-                    <span className="truncate">{c.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2 shrink-0">{c.count}</span>
+                    <span>{t("All")}</span>
+                    <span className="text-xs text-muted-foreground">{total}</span>
                   </Link>
-                ))}
+                  {cats.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/stories?category=${c.slug}`}
+                      onClick={() => setCatsOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-muted"
+                    >
+                      <span className="truncate">{c.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2 shrink-0">{c.count}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Nav links */}
-        <nav className="hidden md:flex items-center gap-1 shrink-0">
-          <Link to="/stories" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-            {t("Stories")}
-          </Link>
-          <Link to="/planning" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-            {t("Plan Wedding")}
-          </Link>
-          {user && (
-            <Link to="/messages" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-              <MessageCircle className="w-4 h-4 inline mr-1" />{t("Messages")}
+        {/* Center: Nav links + Search */}
+        <div className="hidden md:flex flex-1 items-center justify-center gap-4">
+          <nav className="flex items-center gap-1">
+            <Link to="/stories" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+              {t("Stories")}
             </Link>
-          )}
-          {isAuthor && (
-            <Link to="/author-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-              <PenLine className="w-4 h-4 inline mr-1" />{t("Author")}
+            <Link to="/planning" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+              {t("Plan Wedding")}
             </Link>
-          )}
-          {isVendor && (
-            <Link to="/vendor-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-              <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
-            </Link>
-          )}
-          {isAdmin && (
-            <Link to="/admin" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-              <ShieldCheck className="w-4 h-4 inline mr-1" />{t("Admin")}
-            </Link>
-          )}
-        </nav>
+            {user && (
+              <Link to="/messages" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+                <MessageCircle className="w-4 h-4 inline mr-1" />{t("Messages")}
+              </Link>
+            )}
+            {isAuthor && (
+              <Link to="/author-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+                <PenLine className="w-4 h-4 inline mr-1" />{t("Author")}
+              </Link>
+            )}
+            {isVendor && (
+              <Link to="/vendor-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+                <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+                <ShieldCheck className="w-4 h-4 inline mr-1" />{t("Admin")}
+              </Link>
+            )}
+          </nav>
 
-        {/* Search bar - smaller */}
-        <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-[240px] ml-auto relative">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("Search stories...")}
-            className="w-full h-10 pl-11 pr-24 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-          />
-          <button
-            type="submit"
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
-          >
-            {t("Search")}
-          </button>
-        </form>
+          <form onSubmit={onSearch} className="relative w-full max-w-[240px]">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("Search stories...")}
+              className="w-full h-10 pl-11 pr-24 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+            />
+            <button
+              type="submit"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
+            >
+              {t("Search")}
+            </button>
+          </form>
+        </div>
 
-        {/* Language + sign-out only */}
+        {/* Right: Language + sign-out only */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
             <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
