@@ -174,15 +174,6 @@ const Index = () => {
       <style>{`@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }`}</style>
       <Header />
       <main className="pt-16 bg-background">
-        {/* Categories bar (non-sticky) */}
-        <section className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
-            <CategoriesButton cats={cats} activeCat="all" />
-            <Link to="/stories" className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1">
-              {t("All stories")} <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
 
         {/* Trending ticker */}
         <HeadlineTicker posts={posts} />
