@@ -203,7 +203,7 @@ const Header = () => {
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden bg-card border-b border-border px-4 pb-4 animate-fade-in">
+        <div className="lg:hidden bg-card border-b border-border px-4 pb-4 animate-fade-in">
           <form onSubmit={onSearch} className="relative mt-3">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
