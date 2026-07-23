@@ -73,31 +73,32 @@ const Header = () => {
     <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <TopAdStrip hidden={scrolled} />
 
-      <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-        {/* Left: Logo + Categories */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
-            <img src={afriwedLogo} alt="AfriWed" className="h-20 sm:h-24 w-auto object-contain" />
-          </Link>
+      <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-4">
+        {/* Left: Logo */}
+        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
+          <img src={afriwedLogo} alt="AfriWed" className="h-12 sm:h-16 lg:h-20 w-auto object-contain" />
+        </Link>
 
-          <div className="relative shrink-0" ref={menuRef}>
+        {/* Center: Categories button (centered) + nav links + language (desktop) */}
+        <div className="flex-1 flex items-center justify-center gap-2 sm:gap-3 min-w-0" ref={menuRef}>
+          <div className="relative shrink-0">
             <button
               onClick={() => setCatsOpen((o) => !o)}
               aria-haspopup="listbox"
               aria-expanded={catsOpen}
-              className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full bg-primary text-primary-foreground text-xs sm:text-sm font-semibold hover:opacity-90 transition"
             >
               <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("Categories")}</span>
+              <span>{t("Categories")}</span>
               <ChevronDown className={cn("w-4 h-4 transition-transform", catsOpen && "rotate-180")} />
             </button>
 
             {catsOpen && (
               <div
                 role="listbox"
-                className="absolute z-50 mt-2 left-0 w-[640px] max-w-[95vw] bg-popover border border-border rounded-2xl shadow-xl p-2 animate-in fade-in-0 zoom-in-95"
+                className="fixed sm:absolute z-50 mt-2 left-1/2 -translate-x-1/2 sm:top-full w-[min(640px,calc(100vw-1.5rem))] bg-popover border border-border rounded-2xl shadow-xl p-2 animate-in fade-in-0 zoom-in-95"
               >
-                <div className="max-h-[70vh] overflow-y-auto grid grid-cols-2 gap-1">
+                <div className="max-h-[70vh] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1">
                   <Link
                     to="/stories"
                     onClick={() => setCatsOpen(false)}
@@ -121,11 +122,8 @@ const Header = () => {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Center: Nav links + Language */}
-        <div className="hidden md:flex flex-1 items-center justify-center gap-3">
-          <nav className="flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1">
             <Link to="/stories" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
               {t("Stories")}
             </Link>
@@ -144,7 +142,7 @@ const Header = () => {
             )}
             {isVendor && (
               <Link to="/vendor-dashboard" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-                <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor Dashboard")}
+                <LayoutDashboard className="w-4 h-4 inline mr-1" />{t("Vendor")}
               </Link>
             )}
             {isAdmin && (
@@ -154,22 +152,22 @@ const Header = () => {
             )}
           </nav>
 
-          <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
+          <div className="hidden md:flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
             <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
             <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
           </div>
         </div>
 
         {/* Right: Search + List Your Business + sign-out */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
-          <form onSubmit={onSearch} className="relative w-full max-w-[240px]">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
+          <form onSubmit={onSearch} className="relative w-full max-w-[220px]">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("Search stories...")}
-              className="w-full h-10 pl-11 pr-24 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+              className="w-full h-10 pl-11 pr-20 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
             />
             <button
               type="submit"
@@ -196,7 +194,7 @@ const Header = () => {
         {/* Mobile toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden ml-auto p-2 text-foreground"
+          className="lg:hidden p-2 text-foreground shrink-0"
           aria-label="Toggle menu"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
