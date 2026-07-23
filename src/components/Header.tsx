@@ -73,14 +73,12 @@ const Header = () => {
     <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <TopAdStrip hidden={scrolled} />
 
-      {/* Logo bar */}
-      <div className="container mx-auto px-4 flex items-center justify-center py-4 border-b border-border/50">
-        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center w-full max-w-md justify-center">
-          <img src={afriwedLogo} alt="AfriWed" className="w-full h-auto max-h-40 object-contain" />
-        </Link>
-      </div>
-
       <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+        {/* Logo on top left */}
+        <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
+          <img src={afriwedLogo} alt="AfriWed" className="h-12 w-auto object-contain" />
+        </Link>
+
         {/* Categories dropdown - top left */}
         <div className="relative shrink-0" ref={menuRef}>
           <button
@@ -154,8 +152,8 @@ const Header = () => {
           )}
         </nav>
 
-        {/* Search bar */}
-        <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-md ml-auto relative">
+        {/* Search bar - smaller */}
+        <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-[240px] ml-auto relative">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <input
             type="search"
@@ -172,19 +170,14 @@ const Header = () => {
           </button>
         </form>
 
-        {/* Language + auth */}
+        {/* Language + sign-out only */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
             <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
             <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
           </div>
-          {user ? (
+          {user && (
             <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild><Link to="/auth">{t("Sign In")}</Link></Button>
-              <Button size="sm" asChild><Link to="/auth?tab=vendor">{t("List Your Business")}</Link></Button>
-            </>
           )}
         </div>
 
@@ -252,22 +245,11 @@ const Header = () => {
                 {t("Become an Author")}
               </Link>
             )}
-            <div className="flex gap-2 pt-2">
-              {user ? (
-                <Button variant="ghost" size="sm" className="flex-1" onClick={() => { signOut(); setIsOpen(false); }}>
-                  <LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}
-                </Button>
-              ) : (
-                <>
-                  <Button variant="ghost" size="sm" className="flex-1" asChild>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>{t("Sign In")}</Link>
-                  </Button>
-                  <Button size="sm" className="flex-1" asChild>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>{t("List Your Business")}</Link>
-                  </Button>
-                </>
-              )}
-            </div>
+            {user && (
+              <Button variant="ghost" size="sm" className="justify-start" onClick={() => { signOut(); setIsOpen(false); }}>
+                <LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}
+              </Button>
+            )}
           </nav>
         </div>
       )}
