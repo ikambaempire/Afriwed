@@ -73,11 +73,11 @@ const Header = () => {
     <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <TopAdStrip hidden={scrolled} />
 
-      <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+      <div className="container mx-auto px-4 py-3 flex items-center gap-4">
         {/* Left: Logo + Categories */}
         <div className="flex items-center gap-3 shrink-0">
           <Link to="/" aria-label="Afriwedd home" className="inline-flex items-center shrink-0">
-            <img src={afriwedLogo} alt="AfriWed" className="h-16 sm:h-20 w-auto object-contain" />
+            <img src={afriwedLogo} alt="AfriWed" className="h-20 sm:h-24 w-auto object-contain" />
           </Link>
 
           <div className="relative shrink-0" ref={menuRef}>
@@ -123,8 +123,8 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Center: Nav links + Search */}
-        <div className="hidden md:flex flex-1 items-center justify-center gap-4">
+        {/* Center: Nav links + Language */}
+        <div className="hidden md:flex flex-1 items-center justify-center gap-3">
           <nav className="flex items-center gap-1">
             <Link to="/stories" className="px-3 h-9 inline-flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
               {t("Stories")}
@@ -154,6 +154,14 @@ const Header = () => {
             )}
           </nav>
 
+          <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
+            <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
+            <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
+          </div>
+        </div>
+
+        {/* Right: Search + List Your Business + sign-out */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           <form onSubmit={onSearch} className="relative w-full max-w-[240px]">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
@@ -170,14 +178,16 @@ const Header = () => {
               {t("Search")}
             </button>
           </form>
-        </div>
 
-        {/* Right: Language + sign-out only */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
-          <div className="flex items-center rounded-full border border-border overflow-hidden text-xs font-medium" role="group" aria-label="Language">
-            <button onClick={() => setLang("en")} className={`px-3 py-1.5 transition-colors ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "en"}>EN</button>
-            <button onClick={() => setLang("rw")} className={`px-3 py-1.5 transition-colors ${lang === "rw" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`} aria-pressed={lang === "rw"}>RW</button>
-          </div>
+          {!user && (
+            <Link
+              to="/auth?tab=vendor"
+              className="inline-flex items-center px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition whitespace-nowrap"
+            >
+              {t("List Your Business")}
+            </Link>
+          )}
+
           {user && (
             <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
           )}
