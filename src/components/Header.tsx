@@ -255,6 +255,11 @@ const Header = () => {
                 {t("Become an Author")}
               </Link>
             )}
+            {!user && (
+              <Link to="/auth?tab=vendor" onClick={() => setIsOpen(false)} className="inline-flex items-center justify-center px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition">
+                {t("List Your Business")}
+              </Link>
+            )}
             {user && (
               <Button variant="ghost" size="sm" className="justify-start" onClick={() => { signOut(); setIsOpen(false); }}>
                 <LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}
