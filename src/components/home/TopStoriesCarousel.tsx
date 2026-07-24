@@ -1,7 +1,7 @@
 import { useEffect, useState, type SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Calendar, User, Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, User, Flame, Heart, Sparkles, Gem, Flower2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
