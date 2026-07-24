@@ -99,38 +99,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
           </div>
         </div>
 
-        {/* Featured caption above deck */}
-        <div className="max-w-2xl mx-auto text-center mb-8 md:mb-10 min-h-[110px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={featured.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Link to={`/stories/${featured.slug}`} className="block group">
-                <h3 className="font-display text-xl md:text-3xl font-bold leading-snug group-hover:text-primary transition-colors">
-                  {featured.title}
-                </h3>
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-3">
-                  {featured.author?.display_name && (
-                    <span className="inline-flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {featured.author.display_name}
-                    </span>
-                  )}
-                  {featured.published_at && (
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {fmtDate(featured.published_at)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        {/* caption moved to overlay on active card */}
 
         {/* Fanned card deck */}
         <div
