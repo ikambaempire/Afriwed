@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CategoriesButton from "@/components/stories/CategoriesButton";
 import AdBanner from "@/components/home/AdBanner";
+import TopStoriesCarousel from "@/components/home/TopStoriesCarousel";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowRight, Flame } from "lucide-react";
@@ -185,20 +186,9 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Lead + side headlines */}
-            {lead && (
-              <section className="py-8 md:py-10 border-b border-border">
-                <div className="container mx-auto px-4 grid lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-2">
-                    <StoryCard p={lead} size="lg" />
-                  </div>
-                  <div className="lg:border-l lg:border-border lg:pl-8">
-                    <h3 className="text-xs font-bold tracking-widest uppercase text-primary mb-2">{t("Top Stories")}</h3>
-                    <div>{sideTop.map((p) => <SideItem key={p.id} p={p} />)}</div>
-                  </div>
-                </div>
-              </section>
-            )}
+            {/* Top stories carousel (fanned deck) */}
+            <TopStoriesCarousel posts={posts.slice(0, 7)} />
+
 
             {/* Latest news 3-column grid */}
             {latest.length > 0 && (
