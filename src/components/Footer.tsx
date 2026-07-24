@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail } from "lucide-react";
+import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+
 
 type CatCount = { id: string; slug: string; name: string; count: number };
 
