@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail } from "lucide-react";
+import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+
 
 type CatCount = { id: string; slug: string; name: string; count: number };
 
@@ -63,8 +65,33 @@ const CategoryCounts = () => {
 const Footer = () => {
   const { t } = useLanguage();
   return (
-  <footer className="bg-foreground text-primary-foreground">
+  <footer className="relative overflow-hidden bg-foreground text-primary-foreground">
+    {/* Floating romantic icons */}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {[
+        { Icon: Heart, top: "8%", left: "5%", size: 26, delay: 0, dur: 7, fill: true },
+        { Icon: Sparkles, top: "18%", left: "92%", size: 22, delay: 1.4, dur: 8 },
+        { Icon: Flower2, top: "60%", left: "3%", size: 28, delay: 0.6, dur: 9 },
+        { Icon: Heart, top: "82%", left: "94%", size: 24, delay: 2.2, dur: 7, fill: true },
+        { Icon: Gem, top: "40%", left: "97%", size: 20, delay: 1.1, dur: 8 },
+        { Icon: Sparkles, top: "72%", left: "48%", size: 18, delay: 0.3, dur: 7.5 },
+        { Icon: Heart, top: "32%", left: "50%", size: 16, delay: 2.6, dur: 9, fill: true },
+      ].map(({ Icon, top, left, size, delay, dur, fill }, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-primary/30"
+          style={{ top, left }}
+          animate={{ y: [0, -16, 0], rotate: [0, 8, -8, 0], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: dur, delay, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Icon size={size} fill={fill ? "currentColor" : "none"} />
+        </motion.div>
+      ))}
+    </div>
+
+    <div className="relative">
     <CategoryCounts />
+
 
     {/* Newsletter band */}
     <div className="border-b border-primary-foreground/10">
@@ -182,7 +209,9 @@ const Footer = () => {
         </div>
       </div>
     </div>
+    </div>
   </footer>
+
   );
 };
 
