@@ -40,7 +40,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
 
   useEffect(() => {
     if (paused || items.length < 2) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 5000);
+    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 6000);
     return () => clearInterval(id);
   }, [paused, items.length]);
 
@@ -77,7 +77,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
             <p className="inline-flex items-center gap-2 text-[11px] tracking-[0.3em] uppercase font-bold text-primary mb-2">
               <Flame className="w-3.5 h-3.5" /> {t("Top Stories")}
             </p>
-            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight">
+            <h2 className="font-display text-xl md:text-2xl font-bold leading-tight">
               {t("This week's most-read")}
             </h2>
           </div>
@@ -99,38 +99,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
           </div>
         </div>
 
-        {/* Featured caption above deck */}
-        <div className="max-w-2xl mx-auto text-center mb-8 md:mb-10 min-h-[110px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={featured.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Link to={`/stories/${featured.slug}`} className="block group">
-                <h3 className="font-display text-xl md:text-3xl font-bold leading-snug group-hover:text-primary transition-colors">
-                  {featured.title}
-                </h3>
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-3">
-                  {featured.author?.display_name && (
-                    <span className="inline-flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {featured.author.display_name}
-                    </span>
-                  )}
-                  {featured.published_at && (
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {fmtDate(featured.published_at)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        {/* caption moved to overlay on active card */}
 
         {/* Fanned card deck */}
         <div
@@ -158,7 +127,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
                     opacity: hidden ? 0 : cfg.opacity,
                     filter: `blur(${cfg.blur}px)`,
                   }}
-                  transition={{ type: "spring", stiffness: 180, damping: 24 }}
+                  transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 1.2 }}
                   onClick={() => !isActive && setActive(i)}
                 >
                   <div
@@ -226,14 +195,20 @@ const CardMedia = ({ post }: { post: Post }) => (
       loading="lazy"
       draggable={false}
     />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-    <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-      <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-2">
+    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
+      <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-3">
         <Flame className="w-3 h-3" /> Top
       </span>
-      <h4 className="font-display text-sm md:text-base font-semibold text-primary-foreground leading-snug line-clamp-3 drop-shadow">
+      <h4 className="font-display text-base md:text-lg font-semibold text-primary-foreground leading-snug line-clamp-4 drop-shadow">
         {post.title}
       </h4>
+      {post.excerpt && (
+        <p
+          className="hidden md:block mt-2 text-xs text-white/85 line-clamp-3 max-w-[85%]"
+          dangerouslySetInnerHTML={{ __html: post.excerpt.slice(0, 140) }}
+        />
+      )}
     </div>
   </>
 );
