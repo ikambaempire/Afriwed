@@ -187,7 +187,7 @@ const Index = () => {
         ) : (
           <>
             {/* Top stories carousel (fanned deck) */}
-            <TopStoriesCarousel posts={posts.slice(0, 7)} />
+            <TopStoriesCarousel posts={posts.slice(0, 9)} />
 
 
             {/* Latest news 3-column grid */}

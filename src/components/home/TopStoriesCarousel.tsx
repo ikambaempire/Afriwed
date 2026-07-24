@@ -34,13 +34,13 @@ const POS = {
 
 const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
   const { t } = useLanguage();
-  const items = posts.slice(0, 7);
+  const items = posts.slice(0, 9);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (paused || items.length < 2) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 6000);
+    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 4000);
     return () => clearInterval(id);
   }, [paused, items.length]);
 
