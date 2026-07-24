@@ -195,14 +195,20 @@ const CardMedia = ({ post }: { post: Post }) => (
       loading="lazy"
       draggable={false}
     />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-    <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-      <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-2">
+    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
+      <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-3">
         <Flame className="w-3 h-3" /> Top
       </span>
-      <h4 className="font-display text-sm md:text-base font-semibold text-primary-foreground leading-snug line-clamp-3 drop-shadow">
+      <h4 className="font-display text-base md:text-lg font-semibold text-primary-foreground leading-snug line-clamp-4 drop-shadow">
         {post.title}
       </h4>
+      {post.excerpt && (
+        <p
+          className="hidden md:block mt-2 text-xs text-white/85 line-clamp-3 max-w-[85%]"
+          dangerouslySetInnerHTML={{ __html: post.excerpt.slice(0, 140) }}
+        />
+      )}
     </div>
   </>
 );
