@@ -5,7 +5,7 @@ import { Menu, X, LogOut, LayoutDashboard, ShieldCheck, MessageCircle, PenLine, 
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
-
+import TopAdStrip from "@/components/TopAdStrip";
 import afriwedLogo from "@/assets/afriwed-logo.png";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
-
+      <TopAdStrip hidden={scrolled} />
 
       <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-4">
         {/* Left: Logo */}

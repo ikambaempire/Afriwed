@@ -186,29 +186,8 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Top stories carousel with side story blocks */}
-            <section className="border-b border-border bg-gradient-to-b from-primary/5 via-background to-background">
-              <div className="container mx-auto px-4 py-6 md:py-10">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-                  <aside className="hidden lg:block lg:col-span-3 order-1">
-                    <h3 className="font-display text-xs tracking-[0.25em] uppercase font-bold text-primary mb-3">{t("Editor's Picks")}</h3>
-                    <div className="divide-y divide-border">
-                      {posts.slice(7, 10).map((p) => <SideItem key={p.id} p={p} />)}
-                    </div>
-                  </aside>
-                  <div className="lg:col-span-6 order-first lg:order-2">
-                    <TopStoriesCarousel posts={posts.slice(0, 7)} />
-                  </div>
-                  <aside className="hidden lg:block lg:col-span-3 order-3">
-                    <h3 className="font-display text-xs tracking-[0.25em] uppercase font-bold text-primary mb-3">{t("More Stories")}</h3>
-                    <div className="divide-y divide-border">
-                      {posts.slice(10, 13).map((p) => <SideItem key={p.id} p={p} />)}
-                    </div>
-                  </aside>
-                </div>
-              </div>
-            </section>
-
+            {/* Top stories carousel (fanned deck) */}
+            <TopStoriesCarousel posts={posts.slice(0, 7)} />
 
 
             {/* Latest news 3-column grid */}
