@@ -127,7 +127,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
                     opacity: hidden ? 0 : cfg.opacity,
                     filter: `blur(${cfg.blur}px)`,
                   }}
-                  transition={{ type: "spring", stiffness: 180, damping: 24 }}
+                  transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 1.2 }}
                   onClick={() => !isActive && setActive(i)}
                 >
                   <div
