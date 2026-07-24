@@ -77,7 +77,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
             <p className="inline-flex items-center gap-2 text-[11px] tracking-[0.3em] uppercase font-bold text-primary mb-2">
               <Flame className="w-3.5 h-3.5" /> {t("Top Stories")}
             </p>
-            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight">
+            <h2 className="font-display text-xl md:text-2xl font-bold leading-tight">
               {t("This week's most-read")}
             </h2>
           </div>
