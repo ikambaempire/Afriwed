@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CategoriesButton from "@/components/stories/CategoriesButton";
 import AdBanner from "@/components/home/AdBanner";
+import TopStoriesCarousel from "@/components/home/TopStoriesCarousel";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowRight, Flame } from "lucide-react";
