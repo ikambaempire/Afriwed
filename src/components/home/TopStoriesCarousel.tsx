@@ -70,6 +70,42 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
         <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-primary/10 blur-3xl" />
       </div>
 
+      {/* BIG background wordmark */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
+        <span
+          className="font-display font-black tracking-tighter text-primary/10 whitespace-nowrap"
+          style={{ fontSize: "clamp(120px, 22vw, 360px)", lineHeight: 1 }}
+          aria-hidden
+        >
+          AFRIWED
+        </span>
+      </div>
+
+      {/* Floating romantic icons */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {[
+          { Icon: Heart, top: "12%", left: "6%", size: 28, delay: 0, dur: 6, fill: true },
+          { Icon: Sparkles, top: "22%", left: "88%", size: 22, delay: 1.2, dur: 7 },
+          { Icon: Flower2, top: "70%", left: "4%", size: 30, delay: 0.6, dur: 8 },
+          { Icon: Heart, top: "78%", left: "92%", size: 24, delay: 2, dur: 6.5, fill: true },
+          { Icon: Gem, top: "40%", left: "2%", size: 20, delay: 1.6, dur: 7.5 },
+          { Icon: Sparkles, top: "58%", left: "94%", size: 26, delay: 0.4, dur: 6 },
+          { Icon: Heart, top: "6%", left: "48%", size: 18, delay: 2.4, dur: 8, fill: true },
+        ].map(({ Icon, top, left, size, delay, dur, fill }, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-primary/40"
+            style={{ top, left }}
+            animate={{ y: [0, -14, 0], rotate: [0, 6, -6, 0], opacity: [0.55, 0.9, 0.55] }}
+            transition={{ duration: dur, delay, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Icon size={size} fill={fill ? "currentColor" : "none"} />
+          </motion.div>
+        ))}
+      </div>
+
+
+
       <div className="relative container mx-auto px-4 pt-12 md:pt-16 pb-10 md:pb-14">
         {/* Header */}
         <div className="flex items-end justify-between mb-8 md:mb-10">
