@@ -40,7 +40,7 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
 
   useEffect(() => {
     if (paused || items.length < 2) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 5000);
+    const id = setInterval(() => setActive((i) => (i + 1) % items.length), 3500);
     return () => clearInterval(id);
   }, [paused, items.length]);
 
