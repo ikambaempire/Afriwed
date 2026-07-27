@@ -134,7 +134,7 @@ const Footer = () => {
             {[
               { Icon: Instagram, href: "https://www.instagram.com/afriwed_rw/", label: "Instagram" },
               { Icon: Facebook, href: "#", label: "Facebook (coming soon)" },
-              { Icon: Twitter, href: "https://x.com/afriwed_rw", label: "X (Twitter)" },
+              { Icon: XIcon, href: "https://x.com/afriwed_rw", label: "X" },
               { Icon: Youtube, href: "https://www.youtube.com/@AfriWedRwanda", label: "YouTube" },
             ].map(({ Icon, href, label }) => {
               const disabled = href === "#";
