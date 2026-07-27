@@ -23,6 +23,7 @@ import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
 import { BookOpen, Briefcase } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import ContentEditor from "@/components/admin/ContentEditor";
 import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
 const StoryImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
@@ -1069,8 +1070,13 @@ const AdminDashboard = () => {
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="real-weddings">Real Weddings</TabsTrigger>
               <TabsTrigger value="authors">Authors</TabsTrigger>
+              <TabsTrigger value="content-editor">Content Editor</TabsTrigger>
               <TabsTrigger value="mirror">Image Mirror</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="content-editor">
+              <ContentEditor />
+            </TabsContent>
 
             <TabsContent value="stories" className="space-y-4">
               <Card>

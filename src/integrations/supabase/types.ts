@@ -654,6 +654,33 @@ export type Database = {
         }
         Relationships: []
       }
+      site_strings: {
+        Row: {
+          created_at: string
+          description: string | null
+          key: string
+          updated_at: string
+          value_en: string
+          value_rw: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          key: string
+          updated_at?: string
+          value_en?: string
+          value_rw?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value_en?: string
+          value_rw?: string
+        }
+        Relationships: []
+      }
       submissions: {
         Row: {
           admin_notes: string | null
