@@ -221,32 +221,40 @@ const TopStoriesCarousel = ({ posts }: { posts: Post[] }) => {
   );
 };
 
-const CardMedia = ({ post }: { post: Post }) => (
-  <>
-    <img
-      src={post.featured_image_url || storyFallbackImage}
-      onError={onImgErr}
-      alt={post.title}
-      className="w-full h-full object-cover"
-      loading="lazy"
-      draggable={false}
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
-      <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-3">
-        <Flame className="w-3 h-3" /> Top
-      </span>
-      <h4 className="font-display text-base md:text-lg font-semibold text-primary-foreground leading-snug line-clamp-4 drop-shadow">
-        {post.title}
-      </h4>
-      {post.excerpt && (
-        <p
-          className="hidden md:block mt-2 text-xs text-white/85 line-clamp-3 max-w-[85%]"
-          dangerouslySetInnerHTML={{ __html: post.excerpt.slice(0, 140) }}
-        />
+const CardMedia = ({ post }: { post: Post }) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted/60 to-muted animate-pulse" />
       )}
-    </div>
-  </>
-);
+      <img
+        src={post.featured_image_url || storyFallbackImage}
+        onError={(e) => { onImgErr(e); setLoaded(true); }}
+        onLoad={() => setLoaded(true)}
+        alt={post.title}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
+        <span className="inline-flex items-center gap-1 text-[10px] tracking-widest uppercase font-bold text-primary-foreground bg-primary/90 rounded-full px-2.5 py-1 mb-3">
+          <Flame className="w-3 h-3" /> Top
+        </span>
+        <h4 className="font-display text-base md:text-lg font-semibold text-primary-foreground leading-snug line-clamp-4 drop-shadow">
+          {post.title}
+        </h4>
+        {post.excerpt && (
+          <p
+            className="hidden md:block mt-2 text-xs text-white/85 line-clamp-3 max-w-[85%]"
+            dangerouslySetInnerHTML={{ __html: post.excerpt.slice(0, 140) }}
+          />
+        )}
+      </div>
+    </>
+  );
+};
 
 export default TopStoriesCarousel;
