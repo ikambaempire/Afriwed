@@ -23,6 +23,7 @@ import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
 import { BookOpen, Briefcase } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import ContentEditor from "@/components/admin/ContentEditor";
 import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
 const StoryImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
