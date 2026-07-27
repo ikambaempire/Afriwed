@@ -101,7 +101,7 @@ const StoryDetail = () => {
           {post.featured_image_url && (
             <div className="w-full h-[60vh] max-h-[600px] relative overflow-hidden">
               <img src={post.featured_image_url} alt={post.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
             </div>
           )}
           <div className="container mx-auto px-4 max-w-3xl -mt-32 relative z-10">

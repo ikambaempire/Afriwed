@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
+import { Heart, Smartphone, Instagram, Facebook, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+
+const XIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2H21l-6.52 7.45L22 22h-6.828l-4.77-6.24L4.8 22H2.04l6.98-7.97L2 2h6.914l4.33 5.72L18.244 2Zm-2.393 18h1.86L8.24 4H6.24l9.61 16Z" />
+  </svg>
+);
 
 
 type CatCount = { id: string; slug: string; name: string; count: number };
@@ -134,7 +140,7 @@ const Footer = () => {
             {[
               { Icon: Instagram, href: "https://www.instagram.com/afriwed_rw/", label: "Instagram" },
               { Icon: Facebook, href: "#", label: "Facebook (coming soon)" },
-              { Icon: Twitter, href: "https://x.com/afriwed_rw", label: "X (Twitter)" },
+              { Icon: XIcon, href: "https://x.com/afriwed_rw", label: "X" },
               { Icon: Youtube, href: "https://www.youtube.com/@AfriWedRwanda", label: "YouTube" },
             ].map(({ Icon, href, label }) => {
               const disabled = href === "#";
@@ -161,9 +167,9 @@ const Footer = () => {
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
             <li><Link to="/stories" className="hover:text-primary transition-colors">{t("All Stories")}</Link></li>
             <li><Link to="/real-weddings" className="hover:text-primary transition-colors">{t("Real Weddings")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Culture")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Style")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Planning")}</Link></li>
+            <li><Link to="/stories?category=culture" className="hover:text-primary transition-colors">{t("Culture")}</Link></li>
+            <li><Link to="/stories?category=style" className="hover:text-primary transition-colors">{t("Style")}</Link></li>
+            <li><Link to="/stories?category=planning" className="hover:text-primary transition-colors">{t("Planning")}</Link></li>
           </ul>
         </div>
 
@@ -179,11 +185,9 @@ const Footer = () => {
         <div>
           <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">{t("Company")}</h4>
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("About Us")}</Link></li>
             <li><Link to="/vendors" className="hover:text-primary transition-colors">{t("Find Vendors")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Contact")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Privacy")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Terms")}</Link></li>
+            <li><a href="mailto:hello@afriwedd.com" className="hover:text-primary transition-colors">{t("Contact")}</a></li>
+            <li><Link to="/install" className="hover:text-primary transition-colors">{t("Download the App")}</Link></li>
           </ul>
         </div>
       </div>
