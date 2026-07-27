@@ -167,9 +167,9 @@ const Footer = () => {
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
             <li><Link to="/stories" className="hover:text-primary transition-colors">{t("All Stories")}</Link></li>
             <li><Link to="/real-weddings" className="hover:text-primary transition-colors">{t("Real Weddings")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Culture")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Style")}</Link></li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">{t("Planning")}</Link></li>
+            <li><Link to="/stories?category=culture" className="hover:text-primary transition-colors">{t("Culture")}</Link></li>
+            <li><Link to="/stories?category=style" className="hover:text-primary transition-colors">{t("Style")}</Link></li>
+            <li><Link to="/stories?category=planning" className="hover:text-primary transition-colors">{t("Planning")}</Link></li>
           </ul>
         </div>
 
@@ -185,11 +185,9 @@ const Footer = () => {
         <div>
           <h4 className="font-display text-sm font-semibold mb-4 tracking-wide">{t("Company")}</h4>
           <ul className="space-y-2.5 text-sm text-primary-foreground/60">
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("About Us")}</Link></li>
             <li><Link to="/vendors" className="hover:text-primary transition-colors">{t("Find Vendors")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Contact")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Privacy")}</Link></li>
-            <li><Link to="/" className="hover:text-primary transition-colors">{t("Terms")}</Link></li>
+            <li><a href="mailto:hello@afriwedd.com" className="hover:text-primary transition-colors">{t("Contact")}</a></li>
+            <li><Link to="/install" className="hover:text-primary transition-colors">{t("Download the App")}</Link></li>
           </ul>
         </div>
       </div>
