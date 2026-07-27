@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Smartphone, Instagram, Facebook, Twitter, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
+import { Heart, Smartphone, Instagram, Facebook, Youtube, Mail, Sparkles, Gem, Flower2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
