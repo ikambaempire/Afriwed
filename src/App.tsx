@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { SiteStringsProvider } from "@/hooks/useSiteStrings";
 import Index from "./pages/Index";
 import Vendors from "./pages/Vendors";
 import VendorProfile from "./pages/VendorProfile";
@@ -35,6 +36,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <LanguageProvider>
+          <SiteStringsProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/vendors" element={<Vendors />} />
@@ -56,6 +58,7 @@ const App = () => (
             <Route path="/authors/:slug" element={<AuthorProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SiteStringsProvider>
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

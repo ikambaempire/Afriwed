@@ -1069,8 +1069,13 @@ const AdminDashboard = () => {
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="real-weddings">Real Weddings</TabsTrigger>
               <TabsTrigger value="authors">Authors</TabsTrigger>
+              <TabsTrigger value="content-editor">Content Editor</TabsTrigger>
               <TabsTrigger value="mirror">Image Mirror</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="content-editor">
+              <ContentEditor />
+            </TabsContent>
 
             <TabsContent value="stories" className="space-y-4">
               <Card>
