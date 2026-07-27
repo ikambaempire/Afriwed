@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 
+const XIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2H21l-6.52 7.45L22 22h-6.828l-4.77-6.24L4.8 22H2.04l6.98-7.97L2 2h6.914l4.33 5.72L18.244 2Zm-2.393 18h1.86L8.24 4H6.24l9.61 16Z" />
+  </svg>
+);
+
 
 type CatCount = { id: string; slug: string; name: string; count: number };
 
