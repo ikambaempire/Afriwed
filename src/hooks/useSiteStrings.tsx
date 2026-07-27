@@ -21,7 +21,7 @@ const SiteStringsContext = createContext<Ctx | null>(null);
 export function SiteStringsProvider({ children }: { children: ReactNode }) {
   const [strings, setStrings] = useState<Record<string, SiteStringRow>>({});
   const [loading, setLoading] = useState(true);
-  const { language } = useLanguage();
+  const { lang } = useLanguage();
 
   const refresh = useCallback(async () => {
     const { data } = await supabase.from("site_strings").select("key,value_en,value_rw,description");
@@ -39,10 +39,10 @@ export function SiteStringsProvider({ children }: { children: ReactNode }) {
     (key: string, fallback: string) => {
       const row = strings[key];
       if (!row) return fallback;
-      const val = language === "rw" ? row.value_rw : row.value_en;
+      const val = lang === "rw" ? row.value_rw : row.value_en;
       return (val && val.trim()) || fallback;
     },
-    [strings, language]
+    [strings, lang]
   );
 
   const value = useMemo(() => ({ strings, loading, refresh, t }), [strings, loading, refresh, t]);
