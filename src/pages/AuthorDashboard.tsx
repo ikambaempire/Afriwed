@@ -113,7 +113,10 @@ const AuthorDashboard = () => {
     }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
+    const { data: cats } = await supabase.from("blog_categories").select("id,name,slug").order("name");
+    setCategories(cats ?? []);
   };
+
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
