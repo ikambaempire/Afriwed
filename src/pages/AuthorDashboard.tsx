@@ -26,17 +26,24 @@ const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Only image files can be uploaded."); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error("Image must be under 15MB."); return; }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) throw new Error("Your session expired — please sign in again.");
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
       const path = `blog/featured/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
       if (error) throw error;
       const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
       onChange(data.publicUrl);
       toast.success("Featured image uploaded");
-    } catch (err: any) { toast.error(err.message); } finally { setUploading(false); }
+    } catch (err: any) {
+      toast.error(err?.message?.includes("row-level security") ? "Upload blocked — your account needs author access." : err?.message || "Upload failed");
+    } finally { setUploading(false); }
   };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
