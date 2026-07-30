@@ -327,49 +327,92 @@ const AuthorDashboard = () => {
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit article" : "New article"}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
-              <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
-              <div>
-                <Label>Featured image</Label>
-                <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
-              </div>
-              <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
-              <div>
-                <Label>Content</Label>
-                <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
-                <p className="text-xs text-muted-foreground mt-1">Use the toolbar to add images from your device, links, headings and quotes anywhere in the article.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Language *</Label>
-                  <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="rw">Kinyarwanda</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
+            <Tabs defaultValue="write" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="write">Write</TabsTrigger>
+                <TabsTrigger value="seo">SEO</TabsTrigger>
+                <TabsTrigger value="publish">Categories &amp; publishing</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="write" className="space-y-4">
+                <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
+                <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
+                <div>
+                  <Label>Featured image</Label>
+                  <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
                 </div>
-                <div><Label>Status</Label>
-                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="publish">Published</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
+                <div>
+                  <Label>Content</Label>
+                  <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
                 </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
+              </TabsContent>
+
+              <TabsContent value="seo">
+                <SeoPanel
+                  value={{
+                    title: form.title, slug: form.slug, excerpt: form.excerpt, content_html: form.content_html,
+                    meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
+                    canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
+                  }}
+                  onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
+                />
+              </TabsContent>
+
+              <TabsContent value="publish" className="space-y-5">
+                <div>
+                  <Label>Story categories *</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Pick one or more categories — this decides where the story appears on the site.</p>
+                  <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto p-1">
+                    {categories.map(c => {
+                      const on = selectedCats.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                    {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories available yet.</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Language *</Label>
+                    <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="rw">Kinyarwanda</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
+                  </div>
+                  <div><Label>Status</Label>
+                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="publish">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button onClick={save}>{editing ? "Save changes" : "Create article"}</Button>
               </div>
-            </div>
+            </Tabs>
           </DialogContent>
         </Dialog>
+
       </main>
       <Footer />
     </>
