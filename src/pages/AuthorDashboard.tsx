@@ -136,22 +136,43 @@ const AuthorDashboard = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
+    setForm(EMPTY_FORM);
+    setSelectedCats([]);
     setOpen(true);
   };
-  const openEdit = (p: any) => {
+  const openEdit = async (p: any) => {
     setEditing(p);
-    setForm({ title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "", featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en" });
+    setForm({
+      title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "",
+      featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en",
+      meta_title: p.meta_title || "", meta_description: p.meta_description || "", focus_keyword: p.focus_keyword || "",
+      canonical_url: p.canonical_url || "", og_image_url: p.og_image_url || "",
+    });
+    const { data: links } = await supabase.from("blog_post_categories").select("category_id").eq("post_id", p.id);
+    setSelectedCats((links ?? []).map((l: any) => l.category_id));
     setOpen(true);
+  };
+
+  const syncCategories = async (postId: string) => {
+    await supabase.from("blog_post_categories").delete().eq("post_id", postId);
+    if (selectedCats.length) {
+      await supabase.from("blog_post_categories").insert(selectedCats.map(c => ({ post_id: postId, category_id: c })));
+    }
   };
 
   const save = async () => {
     if (!form.title.trim()) { toast.error("Title is required"); return; }
+    if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: form.content_html,
       featured_image_url: form.featured_image_url || null, status: form.status,
       language: form.language,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
+      focus_keyword: form.focus_keyword || null,
+      canonical_url: form.canonical_url || null,
+      og_image_url: form.og_image_url || null,
       author_id: authorId,
     };
     if (form.status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
@@ -159,15 +180,18 @@ const AuthorDashboard = () => {
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
+      await syncCategories(editing.id);
       toast.success("Article updated");
     } else {
-      const { error } = await supabase.from("blog_posts").insert(payload);
+      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
       if (error) return toast.error(error.message);
+      if (created) await syncCategories(created.id);
       toast.success("Article created");
     }
     setOpen(false);
     refresh();
   };
+
 
   const remove = async (id: string) => {
     if (!confirm("Delete this article? This cannot be undone.")) return;
