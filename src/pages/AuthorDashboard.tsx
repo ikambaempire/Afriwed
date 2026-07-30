@@ -60,18 +60,21 @@ const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+const EMPTY_FORM = {
+  title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+  meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
+};
+
 const AuthorDashboard = () => {
   const { user, loading, isAuthor, authorId, isAdmin } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-const EMPTY_FORM = {
-  title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
-  meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
-};
+  const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
 
-const AuthorDashboardInner = () => null;
 
   const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
   const [avatarUploading, setAvatarUploading] = useState(false);
