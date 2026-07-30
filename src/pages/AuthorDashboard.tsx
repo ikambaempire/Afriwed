@@ -66,7 +66,13 @@ const AuthorDashboard = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
+const EMPTY_FORM = {
+  title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+  meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
+};
+
+const AuthorDashboardInner = () => null;
+
   const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
