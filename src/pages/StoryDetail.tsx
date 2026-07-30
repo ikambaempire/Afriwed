@@ -71,13 +71,17 @@ const StoryDetail = () => {
   return (
     <>
       <Helmet>
-        <title>{post.title} — Afriwedd</title>
-        <meta name="description" content={(post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
-        <link rel="canonical" href={`https://haruwa1.lovable.app/stories/${post.slug}`} />
-        <meta property="og:title" content={post.title} />
+        <title>{(post.meta_title || post.title)} — Afriwedd</title>
+        <meta name="description" content={(post.meta_description || post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
+        {post.focus_keyword && <meta name="keywords" content={post.focus_keyword} />}
+        <link rel="canonical" href={post.canonical_url || `https://afriwedd.lovable.app/stories/${post.slug}`} />
+        <meta property="og:title" content={post.meta_title || post.title} />
+        <meta property="og:description" content={(post.meta_description || post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://haruwa1.lovable.app/stories/${post.slug}`} />
-        {post.featured_image_url && <meta property="og:image" content={post.featured_image_url} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="og:url" content={post.canonical_url || `https://afriwedd.lovable.app/stories/${post.slug}`} />
+        {(post.og_image_url || post.featured_image_url) && <meta property="og:image" content={post.og_image_url || post.featured_image_url} />}
+
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Article",

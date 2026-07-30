@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import SeoPanel from "@/components/editor/SeoPanel";
 import { useRef } from "react";
 
 const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
@@ -25,17 +26,24 @@ const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Only image files can be uploaded."); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error("Image must be under 15MB."); return; }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) throw new Error("Your session expired — please sign in again.");
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
       const path = `blog/featured/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("vendor-media").upload(path, file);
+      const { error } = await supabase.storage.from("vendor-media").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
       if (error) throw error;
       const { data } = supabase.storage.from("vendor-media").getPublicUrl(path);
       onChange(data.publicUrl);
       toast.success("Featured image uploaded");
-    } catch (err: any) { toast.error(err.message); } finally { setUploading(false); }
+    } catch (err: any) {
+      toast.error(err?.message?.includes("row-level security") ? "Upload blocked — your account needs author access." : err?.message || "Upload failed");
+    } finally { setUploading(false); }
   };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -52,13 +60,22 @@ const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+const EMPTY_FORM = {
+  title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+  meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
+};
+
 const AuthorDashboard = () => {
   const { user, loading, isAuthor, authorId, isAdmin } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
+  const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
+
+
   const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +113,10 @@ const AuthorDashboard = () => {
     }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
+    const { data: cats } = await supabase.from("blog_categories").select("id,name,slug").order("name");
+    setCategories(cats ?? []);
   };
+
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -116,22 +136,43 @@ const AuthorDashboard = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en" });
+    setForm(EMPTY_FORM);
+    setSelectedCats([]);
     setOpen(true);
   };
-  const openEdit = (p: any) => {
+  const openEdit = async (p: any) => {
     setEditing(p);
-    setForm({ title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "", featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en" });
+    setForm({
+      title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "",
+      featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en",
+      meta_title: p.meta_title || "", meta_description: p.meta_description || "", focus_keyword: p.focus_keyword || "",
+      canonical_url: p.canonical_url || "", og_image_url: p.og_image_url || "",
+    });
+    const { data: links } = await supabase.from("blog_post_categories").select("category_id").eq("post_id", p.id);
+    setSelectedCats((links ?? []).map((l: any) => l.category_id));
     setOpen(true);
+  };
+
+  const syncCategories = async (postId: string) => {
+    await supabase.from("blog_post_categories").delete().eq("post_id", postId);
+    if (selectedCats.length) {
+      await supabase.from("blog_post_categories").insert(selectedCats.map(c => ({ post_id: postId, category_id: c })));
+    }
   };
 
   const save = async () => {
     if (!form.title.trim()) { toast.error("Title is required"); return; }
+    if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: form.content_html,
       featured_image_url: form.featured_image_url || null, status: form.status,
       language: form.language,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
+      focus_keyword: form.focus_keyword || null,
+      canonical_url: form.canonical_url || null,
+      og_image_url: form.og_image_url || null,
       author_id: authorId,
     };
     if (form.status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
@@ -139,15 +180,18 @@ const AuthorDashboard = () => {
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
+      await syncCategories(editing.id);
       toast.success("Article updated");
     } else {
-      const { error } = await supabase.from("blog_posts").insert(payload);
+      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
       if (error) return toast.error(error.message);
+      if (created) await syncCategories(created.id);
       toast.success("Article created");
     }
     setOpen(false);
     refresh();
   };
+
 
   const remove = async (id: string) => {
     if (!confirm("Delete this article? This cannot be undone.")) return;
@@ -283,49 +327,92 @@ const AuthorDashboard = () => {
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit article" : "New article"}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
-              <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
-              <div>
-                <Label>Featured image</Label>
-                <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
-              </div>
-              <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
-              <div>
-                <Label>Content</Label>
-                <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
-                <p className="text-xs text-muted-foreground mt-1">Use the toolbar to add images from your device, links, headings and quotes anywhere in the article.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Language *</Label>
-                  <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="rw">Kinyarwanda</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
+            <Tabs defaultValue="write" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="write">Write</TabsTrigger>
+                <TabsTrigger value="seo">SEO</TabsTrigger>
+                <TabsTrigger value="publish">Categories &amp; publishing</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="write" className="space-y-4">
+                <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
+                <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
+                <div>
+                  <Label>Featured image</Label>
+                  <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
                 </div>
-                <div><Label>Status</Label>
-                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="publish">Published</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
+                <div>
+                  <Label>Content</Label>
+                  <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
                 </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
+              </TabsContent>
+
+              <TabsContent value="seo">
+                <SeoPanel
+                  value={{
+                    title: form.title, slug: form.slug, excerpt: form.excerpt, content_html: form.content_html,
+                    meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
+                    canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
+                  }}
+                  onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
+                />
+              </TabsContent>
+
+              <TabsContent value="publish" className="space-y-5">
+                <div>
+                  <Label>Story categories *</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Pick one or more categories — this decides where the story appears on the site.</p>
+                  <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto p-1">
+                    {categories.map(c => {
+                      const on = selectedCats.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                    {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories available yet.</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Language *</Label>
+                    <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="rw">Kinyarwanda</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
+                  </div>
+                  <div><Label>Status</Label>
+                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="publish">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button onClick={save}>{editing ? "Save changes" : "Create article"}</Button>
               </div>
-            </div>
+            </Tabs>
           </DialogContent>
         </Dialog>
+
       </main>
       <Footer />
     </>
