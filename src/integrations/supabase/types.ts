@@ -336,12 +336,17 @@ export type Database = {
       blog_posts: {
         Row: {
           author_id: string | null
+          canonical_url: string | null
           content_html: string | null
           created_at: string
           excerpt: string | null
           featured_image_url: string | null
+          focus_keyword: string | null
           id: string
           language: string
+          meta_description: string | null
+          meta_title: string | null
+          og_image_url: string | null
           published_at: string | null
           slug: string
           status: string
@@ -352,12 +357,17 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          canonical_url?: string | null
           content_html?: string | null
           created_at?: string
           excerpt?: string | null
           featured_image_url?: string | null
+          focus_keyword?: string | null
           id?: string
           language?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
           published_at?: string | null
           slug: string
           status?: string
@@ -368,12 +378,17 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          canonical_url?: string | null
           content_html?: string | null
           created_at?: string
           excerpt?: string | null
           featured_image_url?: string | null
+          focus_keyword?: string | null
           id?: string
           language?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
           published_at?: string | null
           slug?: string
           status?: string
