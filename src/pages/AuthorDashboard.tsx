@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import SeoPanel from "@/components/editor/SeoPanel";
 import { useRef } from "react";
 
 const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
