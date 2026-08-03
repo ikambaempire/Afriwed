@@ -134,7 +134,7 @@ const StoryDetail = () => {
 
           <div className="container mx-auto px-4 max-w-3xl relative z-10">
             <div
-              className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-p:my-6 prose-p:leading-[1.9] prose-headings:mt-10 prose-headings:mb-4 prose-li:my-2 prose-ul:my-6 prose-ol:my-6 prose-blockquote:my-8 prose-a:text-primary prose-img:rounded-xl prose-img:my-8"
+              className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-4 prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3 prose-p:text-foreground/85 prose-p:my-7 prose-p:leading-[1.95] prose-li:my-2 prose-ul:my-6 prose-ol:my-6 prose-blockquote:my-8 prose-a:text-primary prose-img:rounded-xl prose-img:my-8"
               dangerouslySetInnerHTML={{ __html: formatArticle(post.content_html || "") }}
             />
 
