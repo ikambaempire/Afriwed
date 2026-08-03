@@ -19,6 +19,7 @@ import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import SeoPanel from "@/components/editor/SeoPanel";
 import { useRef } from "react";
+import { formatArticle } from "@/lib/articleFormat";
 
 const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -165,7 +166,7 @@ const AuthorDashboard = () => {
     if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
-      title: form.title, slug, excerpt: form.excerpt, content_html: form.content_html,
+      title: form.title, slug, excerpt: form.excerpt, content_html: formatArticle(form.content_html || ""),
       featured_image_url: form.featured_image_url || null, status: form.status,
       language: form.language,
       meta_title: form.meta_title || null,

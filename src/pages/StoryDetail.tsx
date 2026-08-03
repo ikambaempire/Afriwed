@@ -10,49 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 
-/**
- * Normalises legacy/imported article HTML so every story reads with real paragraphs.
- * - converts double <br> breaks into paragraph splits
- * - wraps loose text blocks (separated by blank lines) in <p>
- * - splits very long single-block walls of text into readable paragraphs
- */
-const formatArticle = (html: string) => {
-  if (!html) return "";
-  let out = html
-    .replace(/<br\s*\/?>\s*(<br\s*\/?>\s*)+/gi, "\n\n")
-    .replace(/<p>\s*(&nbsp;|\s)*<\/p>/gi, "");
+import { formatArticle } from "@/lib/articleFormat";
 
-  const paragraphCount = (out.match(/<p[\s>]/gi) || []).length;
-
-  if (paragraphCount < 2) {
-    const stripped = out.replace(/<\/?p[^>]*>/gi, "").trim();
-    const blocks = stripped.split(/\n\s*\n/).filter(b => b.trim());
-    const chunks: string[] = [];
-    blocks.forEach(block => {
-      const text = block.trim();
-      // Wall of text: group sentences into ~3-sentence paragraphs
-      if (text.length > 700 && !/<(h[1-6]|figure|img|ul|ol|blockquote|table)/i.test(text)) {
-        const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z"“‘'])/);
-        for (let i = 0; i < sentences.length; i += 3) {
-          chunks.push(sentences.slice(i, i + 3).join(" "));
-        }
-      } else {
-        chunks.push(text);
-      }
-    });
-    out = chunks
-      .map(c => (/^\s*<(h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
-      .join("\n");
-  } else {
-    out = out
-      .split(/\n\s*\n/)
-      .map(c => c.trim())
-      .filter(Boolean)
-      .map(c => (/^\s*<(p|h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
-      .join("\n");
-  }
-  return out;
-};
 
 const StoryDetail = () => {
   const { slug } = useParams();
@@ -175,7 +134,7 @@ const StoryDetail = () => {
 
           <div className="container mx-auto px-4 max-w-3xl relative z-10">
             <div
-              className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-p:my-6 prose-p:leading-[1.9] prose-headings:mt-10 prose-headings:mb-4 prose-li:my-2 prose-ul:my-6 prose-ol:my-6 prose-blockquote:my-8 prose-a:text-primary prose-img:rounded-xl prose-img:my-8"
+              className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-4 prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3 prose-p:text-foreground/85 prose-p:my-7 prose-p:leading-[1.95] prose-li:my-2 prose-ul:my-6 prose-ol:my-6 prose-blockquote:my-8 prose-a:text-primary prose-img:rounded-xl prose-img:my-8"
               dangerouslySetInnerHTML={{ __html: formatArticle(post.content_html || "") }}
             />
 
