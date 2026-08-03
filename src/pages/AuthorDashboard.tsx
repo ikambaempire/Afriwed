@@ -19,6 +19,7 @@ import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import SeoPanel from "@/components/editor/SeoPanel";
 import { useRef } from "react";
+import { formatArticle } from "@/lib/articleFormat";
 
 const FeaturedImageInput = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
   const inputRef = useRef<HTMLInputElement>(null);
