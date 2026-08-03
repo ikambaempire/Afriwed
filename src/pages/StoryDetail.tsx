@@ -10,49 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 
-/**
- * Normalises legacy/imported article HTML so every story reads with real paragraphs.
- * - converts double <br> breaks into paragraph splits
- * - wraps loose text blocks (separated by blank lines) in <p>
- * - splits very long single-block walls of text into readable paragraphs
- */
-const formatArticle = (html: string) => {
-  if (!html) return "";
-  let out = html
-    .replace(/<br\s*\/?>\s*(<br\s*\/?>\s*)+/gi, "\n\n")
-    .replace(/<p>\s*(&nbsp;|\s)*<\/p>/gi, "");
+import { formatArticle } from "@/lib/articleFormat";
 
-  const paragraphCount = (out.match(/<p[\s>]/gi) || []).length;
-
-  if (paragraphCount < 2) {
-    const stripped = out.replace(/<\/?p[^>]*>/gi, "").trim();
-    const blocks = stripped.split(/\n\s*\n/).filter(b => b.trim());
-    const chunks: string[] = [];
-    blocks.forEach(block => {
-      const text = block.trim();
-      // Wall of text: group sentences into ~3-sentence paragraphs
-      if (text.length > 700 && !/<(h[1-6]|figure|img|ul|ol|blockquote|table)/i.test(text)) {
-        const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z"“‘'])/);
-        for (let i = 0; i < sentences.length; i += 3) {
-          chunks.push(sentences.slice(i, i + 3).join(" "));
-        }
-      } else {
-        chunks.push(text);
-      }
-    });
-    out = chunks
-      .map(c => (/^\s*<(h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
-      .join("\n");
-  } else {
-    out = out
-      .split(/\n\s*\n/)
-      .map(c => c.trim())
-      .filter(Boolean)
-      .map(c => (/^\s*<(p|h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
-      .join("\n");
-  }
-  return out;
-};
 
 const StoryDetail = () => {
   const { slug } = useParams();
