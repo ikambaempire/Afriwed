@@ -10,6 +10,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 
+/**
+ * Normalises legacy/imported article HTML so every story reads with real paragraphs.
+ * - converts double <br> breaks into paragraph splits
+ * - wraps loose text blocks (separated by blank lines) in <p>
+ * - splits very long single-block walls of text into readable paragraphs
+ */
+const formatArticle = (html: string) => {
+  if (!html) return "";
+  let out = html
+    .replace(/<br\s*\/?>\s*(<br\s*\/?>\s*)+/gi, "\n\n")
+    .replace(/<p>\s*(&nbsp;|\s)*<\/p>/gi, "");
+
+  const paragraphCount = (out.match(/<p[\s>]/gi) || []).length;
+
+  if (paragraphCount < 2) {
+    const stripped = out.replace(/<\/?p[^>]*>/gi, "").trim();
+    const blocks = stripped.split(/\n\s*\n/).filter(b => b.trim());
+    const chunks: string[] = [];
+    blocks.forEach(block => {
+      const text = block.trim();
+      // Wall of text: group sentences into ~3-sentence paragraphs
+      if (text.length > 700 && !/<(h[1-6]|figure|img|ul|ol|blockquote|table)/i.test(text)) {
+        const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z"“‘'])/);
+        for (let i = 0; i < sentences.length; i += 3) {
+          chunks.push(sentences.slice(i, i + 3).join(" "));
+        }
+      } else {
+        chunks.push(text);
+      }
+    });
+    out = chunks
+      .map(c => (/^\s*<(h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
+      .join("\n");
+  } else {
+    out = out
+      .split(/\n\s*\n/)
+      .map(c => c.trim())
+      .filter(Boolean)
+      .map(c => (/^\s*<(p|h[1-6]|figure|img|ul|ol|blockquote|table|div|hr)/i.test(c) ? c : `<p>${c}</p>`))
+      .join("\n");
+  }
+  return out;
+};
+
 const StoryDetail = () => {
   const { slug } = useParams();
   const { user } = useAuth();
@@ -100,31 +144,40 @@ const StoryDetail = () => {
         })}</script>
       </Helmet>
       <Header />
-      <main className="pt-20">
+      <main className="pt-24">
         <article>
-          {post.featured_image_url && (
-            <div className="w-full h-[60vh] max-h-[600px] relative overflow-hidden">
-              <img src={post.featured_image_url} alt={post.title} className="w-full h-full object-cover" />
-              {/* Lighter orange overlay preserves image visibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/25 to-transparent" />
-              {/* Dark underlay at the bottom to guarantee title contrast on any image */}
-              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/55 via-black/25 to-transparent" />
-            </div>
-          )}
-          <div className="container mx-auto px-4 max-w-3xl -mt-32 relative z-10">
-            <Link to="/stories" className="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white mb-6 [text-shadow:0_1px_3px_rgb(0_0_0/0.55)]">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <Link to="/stories" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-5">
               <ArrowLeft className="w-4 h-4" /> All stories
             </Link>
-            <h1 className="font-display text-3xl md:text-5xl font-extrabold text-white leading-tight mb-6 tracking-tight [text-shadow:0_2px_12px_rgb(0_0_0/0.65),0_1px_2px_rgb(0_0_0/0.85)]">{post.title}</h1>
-            <div className="flex items-center gap-4 text-sm text-white/95 mb-10 pb-8 border-b border-white/20 [text-shadow:0_1px_3px_rgb(0_0_0/0.6)]">
+            <h1 className="font-display text-3xl md:text-5xl font-extrabold text-foreground leading-tight mb-5 tracking-tight">{post.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 pb-6 border-b border-border">
               {post.author && (
                 post.author.slug
-                  ? <Link to={`/authors/${post.author.slug}`} className="flex items-center gap-1 hover:text-white"><User className="w-3 h-3" />{post.author.display_name}</Link>
+                  ? <Link to={`/authors/${post.author.slug}`} className="flex items-center gap-1 hover:text-primary"><User className="w-3 h-3" />{post.author.display_name}</Link>
                   : <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>
               )}
               {post.published_at && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.published_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>}
             </div>
-            <div className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-a:text-primary prose-img:rounded-xl" dangerouslySetInnerHTML={{ __html: post.content_html || "" }} />
+          </div>
+
+          {post.featured_image_url && (
+            <div className="container mx-auto px-4 max-w-4xl mb-10">
+              <div className="rounded-2xl overflow-hidden bg-muted flex items-center justify-center">
+                <img
+                  src={post.featured_image_url}
+                  alt={post.title}
+                  className="w-full h-auto max-h-[75vh] object-contain"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="container mx-auto px-4 max-w-3xl relative z-10">
+            <div
+              className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/85 prose-p:my-6 prose-p:leading-[1.9] prose-headings:mt-10 prose-headings:mb-4 prose-li:my-2 prose-ul:my-6 prose-ol:my-6 prose-blockquote:my-8 prose-a:text-primary prose-img:rounded-xl prose-img:my-8"
+              dangerouslySetInnerHTML={{ __html: formatArticle(post.content_html || "") }}
+            />
 
             <section className="mt-16 pt-10 border-t border-border">
               <h2 className="font-display text-2xl font-bold mb-6">Comments ({comments.length})</h2>
