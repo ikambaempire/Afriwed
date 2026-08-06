@@ -161,13 +161,14 @@ const AuthorDashboard = () => {
     }
   };
 
-  const save = async () => {
+  const save = async (statusOverride?: string) => {
+    const status = statusOverride || form.status;
     if (!form.title.trim()) { toast.error("Title is required"); return; }
     if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: formatArticle(form.content_html || ""),
-      featured_image_url: form.featured_image_url || null, status: form.status,
+      featured_image_url: form.featured_image_url || null, status,
       language: form.language,
       meta_title: form.meta_title || null,
       meta_description: form.meta_description || null,
@@ -176,22 +177,24 @@ const AuthorDashboard = () => {
       og_image_url: form.og_image_url || null,
       author_id: authorId,
     };
-    if (form.status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
+    if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       await syncCategories(editing.id);
-      toast.success("Article updated");
+      toast.success(status === "publish" ? "Article published" : "Draft saved");
     } else {
-      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("*").single();
       if (error) return toast.error(error.message);
-      if (created) await syncCategories(created.id);
-      toast.success("Article created");
+      if (created) { await syncCategories(created.id); setEditing(created); }
+      toast.success(status === "publish" ? "Article published" : "Draft saved");
     }
-    setOpen(false);
+    setForm((f: any) => ({ ...f, status, slug }));
+    if (status === "publish") setOpen(false);
     refresh();
   };
+
 
 
   const remove = async (id: string) => {
