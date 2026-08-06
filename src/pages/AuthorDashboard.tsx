@@ -12,11 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PenLine, Eye, Trash2, Plus, ExternalLink, Upload } from "lucide-react";
-import RichTextEditor from "@/components/editor/RichTextEditor";
+import GutenbergEditor from "@/components/editor/GutenbergEditor";
 import SeoPanel from "@/components/editor/SeoPanel";
 import { useRef } from "react";
 import { formatArticle } from "@/lib/articleFormat";
@@ -161,13 +160,14 @@ const AuthorDashboard = () => {
     }
   };
 
-  const save = async () => {
+  const save = async (statusOverride?: string) => {
+    const status = statusOverride || form.status;
     if (!form.title.trim()) { toast.error("Title is required"); return; }
     if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: formatArticle(form.content_html || ""),
-      featured_image_url: form.featured_image_url || null, status: form.status,
+      featured_image_url: form.featured_image_url || null, status,
       language: form.language,
       meta_title: form.meta_title || null,
       meta_description: form.meta_description || null,
@@ -176,22 +176,24 @@ const AuthorDashboard = () => {
       og_image_url: form.og_image_url || null,
       author_id: authorId,
     };
-    if (form.status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
+    if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       await syncCategories(editing.id);
-      toast.success("Article updated");
+      toast.success(status === "publish" ? "Article published" : "Draft saved");
     } else {
-      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+      const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("*").single();
       if (error) return toast.error(error.message);
-      if (created) await syncCategories(created.id);
-      toast.success("Article created");
+      if (created) { await syncCategories(created.id); setEditing(created); }
+      toast.success(status === "publish" ? "Article published" : "Draft saved");
     }
-    setOpen(false);
+    setForm((f: any) => ({ ...f, status, slug }));
+    if (status === "publish") setOpen(false);
     refresh();
   };
+
 
 
   const remove = async (id: string) => {
@@ -327,92 +329,93 @@ const AuthorDashboard = () => {
           </Tabs>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editing ? "Edit article" : "New article"}</DialogTitle></DialogHeader>
-            <Tabs defaultValue="write" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="write">Write</TabsTrigger>
-                <TabsTrigger value="seo">SEO</TabsTrigger>
-                <TabsTrigger value="publish">Categories &amp; publishing</TabsTrigger>
-              </TabsList>
+        <GutenbergEditor
+          open={open}
+          isNew={!editing}
+          title={form.title}
+          onTitleChange={v => setForm((f: any) => ({ ...f, title: v, slug: editing ? f.slug : slugify(v) }))}
+          contentHtml={form.content_html}
+          onContentChange={html => setForm((f: any) => ({ ...f, content_html: html }))}
+          editorKey={editing?.id || "new"}
+          onClose={() => setOpen(false)}
+          onSaveDraft={() => save("draft")}
+          onPublish={() => save(form.status === "publish" ? "publish" : "publish")}
+          publishLabel={editing?.status === "publish" ? "Update" : "Publish"}
+          previewUrl={editing?.status === "publish" ? `/stories/${form.slug}` : undefined}
+          postPanel={
+            <>
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Status</Label>
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="publish">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <TabsContent value="write" className="space-y-4">
-                <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : slugify(e.target.value) })} /></div>
-                <div><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" /></div>
-                <div>
-                  <Label>Featured image</Label>
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Language *</Label>
+                <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="rw">Kinyarwanda</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Categories *</Label>
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto mt-2 p-1">
+                  {categories.map(c => {
+                    const on = selectedCats.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                      >
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                  {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories available yet.</p>}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Featured image</Label>
+                <div className="mt-2">
                   <FeaturedImageInput value={form.featured_image_url} onChange={url => setForm({ ...form, featured_image_url: url })} />
                 </div>
-                <div><Label>Excerpt</Label><Textarea value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
-                <div>
-                  <Label>Content</Label>
-                  <RichTextEditor key={editing?.id || "new"} value={form.content_html} onChange={html => setForm(f => ({ ...f, content_html: html }))} />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="seo">
-                <SeoPanel
-                  value={{
-                    title: form.title, slug: form.slug, excerpt: form.excerpt, content_html: form.content_html,
-                    meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
-                    canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
-                  }}
-                  onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
-                />
-              </TabsContent>
-
-              <TabsContent value="publish" className="space-y-5">
-                <div>
-                  <Label>Story categories *</Label>
-                  <p className="text-xs text-muted-foreground mb-2">Pick one or more categories — this decides where the story appears on the site.</p>
-                  <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto p-1">
-                    {categories.map(c => {
-                      const on = selectedCats.includes(c.id);
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
-                        >
-                          {c.name}
-                        </button>
-                      );
-                    })}
-                    {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories available yet.</p>}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Language *</Label>
-                    <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="rw">Kinyarwanda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">Readers can switch language from the top nav.</p>
-                  </div>
-                  <div><Label>Status</Label>
-                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="publish">Published</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={save}>{editing ? "Save changes" : "Create article"}</Button>
               </div>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Excerpt</Label>
+                <Textarea className="mt-1" value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} rows={3} placeholder="Short summary shown on cards and search results." />
+              </div>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">URL slug</Label>
+                <Input className="mt-1" value={form.slug} onChange={e => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="auto-generated from title" />
+              </div>
+            </>
+          }
+          seoPanel={
+            <SeoPanel
+              value={{
+                title: form.title, slug: form.slug, excerpt: form.excerpt, content_html: form.content_html,
+                meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
+                canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
+              }}
+              onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
+            />
+          }
+        />
+
 
       </main>
       <Footer />
