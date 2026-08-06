@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import RichTextEditor from "./RichTextEditor";
 import { X, Settings2, Search, Eye, Save } from "lucide-react";
 
