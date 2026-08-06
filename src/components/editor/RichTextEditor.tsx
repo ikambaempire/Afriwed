@@ -274,10 +274,12 @@ const RichTextEditor = ({ value, onChange, variant = "boxed", placeholder = "Typ
     return (
       <div className="bg-background">
         {toolbar}
+        {header}
         {editable}
       </div>
     );
   }
+
 
   return (
     <div className="border border-input rounded-md overflow-hidden bg-background">
