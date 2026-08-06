@@ -140,3 +140,16 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 }
+
+@layer components {
+  .rte-editable:empty:before,
+  .rte-editable > p:only-child:empty:before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .gutenberg-title::placeholder {
+    color: hsl(var(--muted-foreground) / 0.7);
+  }
+}
