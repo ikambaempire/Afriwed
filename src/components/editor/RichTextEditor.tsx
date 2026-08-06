@@ -14,11 +14,13 @@ interface Props {
   /** Gutenberg-style canvas: borderless sheet, big type, slash commands */
   variant?: "boxed" | "canvas";
   placeholder?: string;
+  /** Rendered between the toolbar and the writing area (canvas variant) */
+  header?: React.ReactNode;
 }
 
 type BlockDef = { key: string; label: string; hint: string; icon: any; run: () => void };
 
-const RichTextEditor = ({ value, onChange, variant = "boxed", placeholder = "Type / to choose a block" }: Props) => {
+const RichTextEditor = ({ value, onChange, variant = "boxed", placeholder = "Type / to choose a block", header }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
