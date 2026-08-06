@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import RichTextEditor from "./RichTextEditor";
 import { X, Settings2, Search, Eye, Save } from "lucide-react";
 
@@ -29,6 +29,25 @@ const GutenbergEditor = ({
   const [tab, setTab] = useState<"post" | "seo">("post");
 
   if (!open) return null;
+
+  const tabs = (
+    <div className="flex border-b border-border sticky top-0 bg-background z-10">
+      {([["post", "Post", Settings2], ["seo", "SEO", Search]] as const).map(([k, label, Icon]) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => setTab(k as any)}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium border-b-2 transition-colors ${
+            tab === k ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Icon className="w-4 h-4" />{label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const panel = <div className="p-4 space-y-5 pb-24">{tab === "post" ? postPanel : seoPanel}</div>;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-muted/40">
@@ -60,70 +79,47 @@ const GutenbergEditor = ({
       </header>
 
       <div className="flex-1 flex min-h-0">
-        {/* Canvas */}
-        <ScrollArea className="flex-1">
+        {/* Canvas — full page scroll */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="mx-auto max-w-3xl my-6 sm:my-10 bg-background rounded-md border border-border shadow-sm">
-            <div className="px-6 sm:px-14 pt-10">
-              <input
-                value={title}
-                onChange={e => onTitleChange(e.target.value)}
-                placeholder="Add title"
-                className="gutenberg-title w-full bg-transparent border-0 outline-none font-display text-3xl sm:text-5xl font-bold leading-tight placeholder:text-muted-foreground/60"
-              />
-            </div>
             <RichTextEditor
               key={editorKey}
               variant="canvas"
               value={contentHtml}
               onChange={onContentChange}
+              header={
+                <div className="px-6 sm:px-14 pt-8">
+                  <input
+                    value={title}
+                    onChange={e => onTitleChange(e.target.value)}
+                    placeholder="Add title"
+                    className="gutenberg-title w-full bg-transparent border-0 outline-none font-display text-3xl sm:text-5xl font-bold leading-tight placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              }
             />
           </div>
-        </ScrollArea>
+
+          {/* Settings below the article on small screens — full height, nothing cut off */}
+          {sidebar && (
+            <div className="lg:hidden mx-auto max-w-3xl mb-10 bg-background rounded-md border border-border">
+              {tabs}
+              {panel}
+            </div>
+          )}
+        </div>
 
         {/* Sidebar */}
         {sidebar && (
-          <aside className="hidden lg:flex w-[340px] shrink-0 flex-col border-l border-border bg-background">
-            <div className="flex border-b border-border">
-              {([["post", "Post", Settings2], ["seo", "SEO", Search]] as const).map(([k, label, Icon]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setTab(k as any)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    tab === k ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />{label}
-                </button>
-              ))}
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-5">{tab === "post" ? postPanel : seoPanel}</div>
-            </ScrollArea>
+          <aside className="hidden lg:flex w-[360px] shrink-0 flex-col border-l border-border bg-background">
+            {tabs}
+            <div className="flex-1 overflow-y-auto overscroll-contain">{panel}</div>
           </aside>
         )}
       </div>
-
-      {/* Mobile settings drawer */}
-      {sidebar && (
-        <div className="lg:hidden border-t border-border bg-background max-h-[45vh] overflow-y-auto">
-          <div className="flex border-b border-border sticky top-0 bg-background">
-            {([["post", "Post"], ["seo", "SEO"]] as const).map(([k, label]) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setTab(k as any)}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 ${tab === k ? "border-primary" : "border-transparent text-muted-foreground"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="p-4 space-y-5">{tab === "post" ? postPanel : seoPanel}</div>
-        </div>
-      )}
     </div>
   );
 };
+
 
 export default GutenbergEditor;
