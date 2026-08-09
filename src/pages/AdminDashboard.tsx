@@ -1370,8 +1370,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="authors" className="space-y-6">
               <PromoteAuthorCard onDone={fetchAll} />
+              <AuthorsManagerTab />
               <AuthorApplicationsTab />
             </TabsContent>
+
 
             <TabsContent value="mirror" className="space-y-4">
               <Card>
