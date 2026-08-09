@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import AiSeoAudit from "./AiSeoAudit";
+import LiveSeoMeter, { liveSeoIssues, liveSeoScore } from "./LiveSeoMeter";
 
 
 export interface SeoValue {
