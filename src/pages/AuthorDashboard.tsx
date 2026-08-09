@@ -74,6 +74,8 @@ const AuthorDashboard = () => {
   const [form, setForm] = useState<any>(EMPTY_FORM);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [allAuthors, setAllAuthors] = useState<any[]>([]);
+  const [publishAs, setPublishAs] = useState<string>("");
 
 
   const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
@@ -115,6 +117,8 @@ const AuthorDashboard = () => {
     setPosts(data ?? []);
     const { data: cats } = await supabase.from("blog_categories").select("id,name,slug").order("name");
     setCategories(cats ?? []);
+    const { data: authors } = await (supabase as any).from("blog_authors").select("id,display_name").order("display_name");
+    setAllAuthors(authors ?? []);
   };
 
 
@@ -138,10 +142,12 @@ const AuthorDashboard = () => {
     setEditing(null);
     setForm(EMPTY_FORM);
     setSelectedCats([]);
+    setPublishAs(authorId!);
     setOpen(true);
   };
   const openEdit = async (p: any) => {
     setEditing(p);
+    setPublishAs(p.author_id || authorId!);
     setForm({
       title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "",
       featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en",
@@ -174,7 +180,7 @@ const AuthorDashboard = () => {
       focus_keyword: form.focus_keyword || null,
       canonical_url: form.canonical_url || null,
       og_image_url: form.og_image_url || null,
-      author_id: authorId,
+      author_id: publishAs || authorId,
     };
     if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
@@ -353,6 +359,21 @@ const AuthorDashboard = () => {
                     <SelectItem value="publish">Published</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Publish as</Label>
+                <Select value={publishAs || authorId!} onValueChange={setPublishAs}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select author" /></SelectTrigger>
+                  <SelectContent>
+                    {allAuthors.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.display_name}{a.id === authorId ? " (you)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Defaults to your own account.</p>
               </div>
 
               <div>
