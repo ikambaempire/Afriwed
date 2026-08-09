@@ -74,6 +74,8 @@ const AuthorDashboard = () => {
   const [form, setForm] = useState<any>(EMPTY_FORM);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [allAuthors, setAllAuthors] = useState<any[]>([]);
+  const [publishAs, setPublishAs] = useState<string>("");
 
 
   const [profileForm, setProfileForm] = useState<{ display_name: string; bio: string; avatar_url: string; social_links: Record<string, string> }>({ display_name: "", bio: "", avatar_url: "", social_links: { instagram: "", twitter: "", facebook: "", tiktok: "", youtube: "", website: "" } });
