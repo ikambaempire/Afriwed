@@ -68,7 +68,15 @@ ${text.slice(0, 18000)}
 Check at least: SEO title length and keyword placement, meta description length (under 160 chars) and appeal, slug quality, keyword usage and natural density, heading structure (single H1, logical H2/H3, headings that are too long — over ~70 characters — or vague), paragraph length and readability (walls of text, sentences that are too long), intro quality, internal/external links, image alt text, and overall content depth.
 
 Return ONLY json in this exact shape, no markdown fences:
-{"score": 0-100, "summary": "one short sentence", "issues": [{"severity":"critical"|"warning"|"tip","area":"Title"|"Meta description"|"Slug"|"Keyword"|"Headings"|"Readability"|"Links"|"Images"|"Content","problem":"what is wrong, quote the exact offending text when relevant","fix":"the exact rewrite or step to fix it","field":"meta_title"|"meta_description"|"focus_keyword"|"slug"|null,"suggested_value":"ready-to-use replacement value when field is not null, else null"}]}
+{"score": 0-100, "summary": "one short sentence", "issues": [{"severity":"critical"|"warning"|"tip","area":"Title"|"Meta description"|"Slug"|"Keyword"|"Headings"|"Readability"|"Links"|"Images"|"Content","problem":"what is wrong, quote the exact offending text when relevant","fix":"the exact rewrite or step to fix it","field":"meta_title"|"meta_description"|"focus_keyword"|"slug"|null,"suggested_value":"ready-to-use replacement value when field is not null, else null","content_action":null|{"action":"rewrite_heading"|"convert_to_heading"|"insert_heading"|"insert_outline"|"rewrite_paragraph","target_text":"the EXACT existing heading or paragraph text from the article this change applies to (or null)","suggested_value":"the new heading or paragraph text","heading_level":2|3,"outline":null|[{"level":2|3,"text":"section heading","after_text":"exact text of the paragraph this heading should go ABOVE, or null"}]}}]}
+
+CONTENT ACTIONS — these power one-click fixes inside the article body, so use them whenever the fix is structural:
+- Heading too long, vague, or missing the keyword -> "rewrite_heading" with target_text = the exact current heading text and suggested_value = the improved heading (under 70 chars).
+- A short standalone paragraph that really is a section title -> "convert_to_heading".
+- A section of text with no heading above it -> "insert_heading" with target_text = the exact first words of the paragraph the heading should sit above.
+- The article has no headings or a weak structure -> ONE "insert_outline" issue with 3-6 outline items, each anchored with after_text quoting exact paragraph text from the article.
+- The focus keyword is missing from the opening paragraph -> "rewrite_paragraph" with target_text = exact first paragraph text and suggested_value = the same paragraph rewritten to include the keyword naturally.
+Set "field" to null whenever you use content_action, and copy target_text/after_text VERBATIM from the article so it can be matched.
 List up to 12 issues, most important first. If something is already good, do not list it.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
