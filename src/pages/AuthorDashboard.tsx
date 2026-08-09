@@ -433,7 +433,10 @@ const AuthorDashboard = () => {
                 meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
                 canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
               }}
-              onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
+              onChange={patch => {
+                if ((patch as any).content_html !== undefined) setContentRev(r => r + 1);
+                setForm((f: any) => ({ ...f, ...patch }));
+              }}
             />
           }
         />
