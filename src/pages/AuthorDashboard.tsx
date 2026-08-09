@@ -343,7 +343,7 @@ const AuthorDashboard = () => {
           onTitleChange={v => setForm((f: any) => ({ ...f, title: v, slug: editing ? f.slug : slugify(v) }))}
           contentHtml={form.content_html}
           onContentChange={html => setForm((f: any) => ({ ...f, content_html: html }))}
-          editorKey={editing?.id || "new"}
+          editorKey={`${editing?.id || "new"}-${contentRev}`}
           onClose={() => setOpen(false)}
           onSaveDraft={() => save("draft")}
           onPublish={() => save(form.status === "publish" ? "publish" : "publish")}
