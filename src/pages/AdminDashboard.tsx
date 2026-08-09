@@ -21,6 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AuthorApplicationsTab from "@/components/admin/AuthorApplicationsTab";
 import PromoteAuthorCard from "@/components/admin/PromoteAuthorCard";
+import AuthorsManagerTab from "@/components/admin/AuthorsManagerTab";
+
 import { BookOpen, Briefcase } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import ContentEditor from "@/components/admin/ContentEditor";
