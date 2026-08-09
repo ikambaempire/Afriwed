@@ -142,10 +142,12 @@ const AuthorDashboard = () => {
     setEditing(null);
     setForm(EMPTY_FORM);
     setSelectedCats([]);
+    setPublishAs(authorId!);
     setOpen(true);
   };
   const openEdit = async (p: any) => {
     setEditing(p);
+    setPublishAs(p.author_id || authorId!);
     setForm({
       title: p.title, slug: p.slug, excerpt: p.excerpt || "", content_html: p.content_html || "",
       featured_image_url: p.featured_image_url || "", status: p.status, language: p.language || "en",
