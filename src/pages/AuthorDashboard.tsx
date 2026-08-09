@@ -72,6 +72,7 @@ const AuthorDashboard = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [contentRev, setContentRev] = useState(0);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [allAuthors, setAllAuthors] = useState<any[]>([]);
