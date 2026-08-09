@@ -78,6 +78,16 @@ const AiSeoAudit = ({ value, onChange }: Props) => {
     toast.success("Suggestion applied");
   };
 
+  const applyContent = (i: number, issue: AiIssue) => {
+    if (!issue.content_action) return;
+    const res = applySeoContentAction(value.content_html, issue.content_action);
+    if (!res.ok) return toast.error(res.message);
+    onChange({ content_html: res.html });
+    setApplied(a => ({ ...a, [i]: true }));
+    toast.success(res.message);
+  };
+
+
   return (
     <div className="rounded-lg border border-primary/30 bg-primary/[0.03] p-3 space-y-3">
       <div className="flex items-center gap-2">
