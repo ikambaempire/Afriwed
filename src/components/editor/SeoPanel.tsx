@@ -72,8 +72,7 @@ interface Props {
 }
 
 const SeoPanel = ({ value, onChange }: Props) => {
-  const checks = seoChecks(value);
-  const score = Math.round((checks.filter(c => c.state === "good").length / checks.length) * 100);
+  const score = liveSeoScore(liveSeoIssues(value));
   const previewTitle = value.meta_title || value.title || "Your story title";
   const previewDesc = (value.meta_description || stripHtml(value.excerpt) || "Write a meta description so readers know what this story is about.").slice(0, 165);
 
