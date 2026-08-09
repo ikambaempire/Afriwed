@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, AlertTriangle, XCircle, Lightbulb, Check, Loader2 } from "lucide-react";
+import { Sparkles, AlertTriangle, XCircle, Lightbulb, Check, Loader2, Heading2, ListTree, KeyRound } from "lucide-react";
 import type { SeoValue } from "./SeoPanel";
+import { applySeoContentAction, type SeoContentSuggestion } from "@/lib/seoApply";
 
 export type AiIssue = {
   severity: "critical" | "warning" | "tip";
@@ -13,6 +14,7 @@ export type AiIssue = {
   fix: string;
   field?: "meta_title" | "meta_description" | "focus_keyword" | "slug" | null;
   suggested_value?: string | null;
+  content_action?: SeoContentSuggestion | null;
 };
 
 const sevStyle: Record<string, { icon: any; cls: string; label: string }> = {
@@ -21,10 +23,19 @@ const sevStyle: Record<string, { icon: any; cls: string; label: string }> = {
   tip: { icon: Lightbulb, cls: "text-primary", label: "Tip" },
 };
 
+const actionMeta: Record<string, { icon: any; label: string }> = {
+  rewrite_heading: { icon: Heading2, label: "Apply heading fix" },
+  convert_to_heading: { icon: Heading2, label: "Turn into a heading" },
+  insert_heading: { icon: Heading2, label: "Insert heading" },
+  insert_outline: { icon: ListTree, label: "Apply outline" },
+  rewrite_paragraph: { icon: KeyRound, label: "Apply keyword rewrite" },
+};
+
 interface Props {
   value: SeoValue;
   onChange: (patch: Partial<SeoValue>) => void;
 }
+
 
 const AiSeoAudit = ({ value, onChange }: Props) => {
   const [loading, setLoading] = useState(false);
