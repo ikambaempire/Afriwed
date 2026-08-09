@@ -362,6 +362,21 @@ const AuthorDashboard = () => {
               </div>
 
               <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Publish as</Label>
+                <Select value={publishAs || authorId!} onValueChange={setPublishAs}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select author" /></SelectTrigger>
+                  <SelectContent>
+                    {allAuthors.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.display_name}{a.id === authorId ? " (you)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Defaults to your own account.</p>
+              </div>
+
+              <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Language *</Label>
                 <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
