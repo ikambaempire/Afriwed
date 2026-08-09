@@ -3,6 +3,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import AiSeoAudit from "./AiSeoAudit";
+
 
 export interface SeoValue {
   title: string;
@@ -127,6 +129,10 @@ const SeoPanel = ({ value, onChange }: Props) => {
           <Label className="text-xs">Social share image URL (optional)</Label>
           <Input value={value.og_image_url} onChange={e => onChange({ og_image_url: e.target.value })} placeholder="Defaults to the featured image" />
         </div>
+
+        <AiSeoAudit value={value} onChange={onChange} />
+
+
 
         <ul className="space-y-1.5">
           {checks.map((c, i) => (
