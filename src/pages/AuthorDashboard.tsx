@@ -180,7 +180,7 @@ const AuthorDashboard = () => {
       focus_keyword: form.focus_keyword || null,
       canonical_url: form.canonical_url || null,
       og_image_url: form.og_image_url || null,
-      author_id: authorId,
+      author_id: publishAs || authorId,
     };
     if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
