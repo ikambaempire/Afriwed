@@ -49,17 +49,64 @@ const GutenbergEditor = ({
 
   const panel = <div className="p-4 space-y-5 pb-24">{tab === "post" ? postPanel : seoPanel}</div>;
 
+  const format = (tag: string) => {
+    const el = document.querySelector<HTMLElement>(".rte-editable");
+    if (!el) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    document.execCommand("formatBlock", false, tag);
+    onContentChange(el.innerHTML);
+  };
+
+  const blockBtns: [string, string, string][] = [
+    ["<p>", "¶", "Paragraph"],
+    ["<h2>", "H2", "Section heading"],
+    ["<h3>", "H3", "Sub heading"],
+    ["<blockquote>", "❝", "Quote"],
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-muted/40">
       {/* Top bar */}
-      <header className="flex items-center gap-2 h-14 px-2 sm:px-4 border-b border-border bg-background shrink-0">
+      <header className="flex items-center gap-2 h-14 px-2 sm:px-4 border-b border-border bg-background shrink-0 overflow-x-auto">
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close editor">
           <X className="w-5 h-5" />
         </Button>
-        <span className="text-sm font-medium hidden sm:block">
+        <span className="text-sm font-medium hidden xl:block">
           {isNew ? "New article" : "Edit article"}
         </span>
+        <span className="w-px h-6 bg-border mx-1 hidden sm:block" />
+        <div className="hidden sm:flex items-center gap-1">
+          {blockBtns.map(([tag, label, title]) => (
+            <Button
+              key={tag}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 font-semibold"
+              title={`Add ${title.toLowerCase()}`}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => format(tag)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline" size="sm"
+            onClick={() => { setSidebar(true); setTab("seo"); }}
+            title="Run the AI SEO test on this story"
+          >
+            <Search className="w-4 h-4 mr-1" />SEO test
+          </Button>
           <Button variant="ghost" size="sm" onClick={onSaveDraft}>
             <Save className="w-4 h-4 mr-1" />Save draft
           </Button>
@@ -77,6 +124,7 @@ const GutenbergEditor = ({
           </Button>
         </div>
       </header>
+
 
       <div className="flex-1 flex min-h-0">
         {/* Canvas — full page scroll */}
