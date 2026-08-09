@@ -130,17 +130,10 @@ const SeoPanel = ({ value, onChange }: Props) => {
           <Input value={value.og_image_url} onChange={e => onChange({ og_image_url: e.target.value })} placeholder="Defaults to the featured image" />
         </div>
 
+        <LiveSeoMeter value={value} />
+
         <AiSeoAudit value={value} onChange={onChange} />
 
-
-
-        <ul className="space-y-1.5">
-          {checks.map((c, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Icon state={c.state} /> {c.label}
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   );
