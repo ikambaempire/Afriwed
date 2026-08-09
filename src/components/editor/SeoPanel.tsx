@@ -3,6 +3,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import AiSeoAudit from "./AiSeoAudit";
+
 
 export interface SeoValue {
   title: string;
