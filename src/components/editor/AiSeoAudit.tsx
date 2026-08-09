@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, AlertTriangle, XCircle, Lightbulb, Check, Loader2 } from "lucide-react";
+import { Sparkles, AlertTriangle, XCircle, Lightbulb, Check, Loader2, Heading2, ListTree, KeyRound } from "lucide-react";
 import type { SeoValue } from "./SeoPanel";
+import { applySeoContentAction, type SeoContentSuggestion } from "@/lib/seoApply";
 
 export type AiIssue = {
   severity: "critical" | "warning" | "tip";
@@ -13,6 +14,7 @@ export type AiIssue = {
   fix: string;
   field?: "meta_title" | "meta_description" | "focus_keyword" | "slug" | null;
   suggested_value?: string | null;
+  content_action?: SeoContentSuggestion | null;
 };
 
 const sevStyle: Record<string, { icon: any; cls: string; label: string }> = {
@@ -21,10 +23,19 @@ const sevStyle: Record<string, { icon: any; cls: string; label: string }> = {
   tip: { icon: Lightbulb, cls: "text-primary", label: "Tip" },
 };
 
+const actionMeta: Record<string, { icon: any; label: string }> = {
+  rewrite_heading: { icon: Heading2, label: "Apply heading fix" },
+  convert_to_heading: { icon: Heading2, label: "Turn into a heading" },
+  insert_heading: { icon: Heading2, label: "Insert heading" },
+  insert_outline: { icon: ListTree, label: "Apply outline" },
+  rewrite_paragraph: { icon: KeyRound, label: "Apply keyword rewrite" },
+};
+
 interface Props {
   value: SeoValue;
   onChange: (patch: Partial<SeoValue>) => void;
 }
+
 
 const AiSeoAudit = ({ value, onChange }: Props) => {
   const [loading, setLoading] = useState(false);
@@ -66,6 +77,16 @@ const AiSeoAudit = ({ value, onChange }: Props) => {
     setApplied(a => ({ ...a, [i]: true }));
     toast.success("Suggestion applied");
   };
+
+  const applyContent = (i: number, issue: AiIssue) => {
+    if (!issue.content_action) return;
+    const res = applySeoContentAction(value.content_html, issue.content_action);
+    if (!res.ok) return toast.error(res.message);
+    onChange({ content_html: res.html });
+    setApplied(a => ({ ...a, [i]: true }));
+    toast.success(res.message);
+  };
+
 
   return (
     <div className="rounded-lg border border-primary/30 bg-primary/[0.03] p-3 space-y-3">
@@ -111,6 +132,21 @@ const AiSeoAudit = ({ value, onChange }: Props) => {
                     {applied[i] ? <><Check className="w-3 h-3 mr-1" />Applied</> : "Apply suggestion"}
                   </Button>
                 )}
+                {!it.field && it.content_action?.action && (() => {
+                  const meta = actionMeta[it.content_action.action] ?? actionMeta.insert_heading;
+                  const A = meta.icon;
+                  return (
+                    <Button
+                      size="sm" variant={applied[i] ? "secondary" : "outline"} className="h-7 text-xs"
+                      onClick={() => applyContent(i, it)} disabled={applied[i]}
+                    >
+                      {applied[i]
+                        ? <><Check className="w-3 h-3 mr-1" />Applied</>
+                        : <><A className="w-3 h-3 mr-1" />{meta.label}</>}
+                    </Button>
+                  );
+                })()}
+
               </li>
             );
           })}

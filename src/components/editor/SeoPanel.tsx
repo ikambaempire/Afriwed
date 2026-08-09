@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import AiSeoAudit from "./AiSeoAudit";
+import LiveSeoMeter, { liveSeoIssues, liveSeoScore } from "./LiveSeoMeter";
 
 
 export interface SeoValue {
@@ -71,8 +72,7 @@ interface Props {
 }
 
 const SeoPanel = ({ value, onChange }: Props) => {
-  const checks = seoChecks(value);
-  const score = Math.round((checks.filter(c => c.state === "good").length / checks.length) * 100);
+  const score = liveSeoScore(liveSeoIssues(value));
   const previewTitle = value.meta_title || value.title || "Your story title";
   const previewDesc = (value.meta_description || stripHtml(value.excerpt) || "Write a meta description so readers know what this story is about.").slice(0, 165);
 
@@ -130,17 +130,10 @@ const SeoPanel = ({ value, onChange }: Props) => {
           <Input value={value.og_image_url} onChange={e => onChange({ og_image_url: e.target.value })} placeholder="Defaults to the featured image" />
         </div>
 
+        <LiveSeoMeter value={value} />
+
         <AiSeoAudit value={value} onChange={onChange} />
 
-
-
-        <ul className="space-y-1.5">
-          {checks.map((c, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Icon state={c.state} /> {c.label}
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   );

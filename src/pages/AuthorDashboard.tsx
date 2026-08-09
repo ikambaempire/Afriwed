@@ -72,6 +72,7 @@ const AuthorDashboard = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [contentRev, setContentRev] = useState(0);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [allAuthors, setAllAuthors] = useState<any[]>([]);
@@ -342,7 +343,7 @@ const AuthorDashboard = () => {
           onTitleChange={v => setForm((f: any) => ({ ...f, title: v, slug: editing ? f.slug : slugify(v) }))}
           contentHtml={form.content_html}
           onContentChange={html => setForm((f: any) => ({ ...f, content_html: html }))}
-          editorKey={editing?.id || "new"}
+          editorKey={`${editing?.id || "new"}-${contentRev}`}
           onClose={() => setOpen(false)}
           onSaveDraft={() => save("draft")}
           onPublish={() => save(form.status === "publish" ? "publish" : "publish")}
@@ -432,7 +433,10 @@ const AuthorDashboard = () => {
                 meta_title: form.meta_title, meta_description: form.meta_description, focus_keyword: form.focus_keyword,
                 canonical_url: form.canonical_url, og_image_url: form.og_image_url, featured_image_url: form.featured_image_url,
               }}
-              onChange={patch => setForm((f: any) => ({ ...f, ...patch }))}
+              onChange={patch => {
+                if ((patch as any).content_html !== undefined) setContentRev(r => r + 1);
+                setForm((f: any) => ({ ...f, ...patch }));
+              }}
             />
           }
         />
