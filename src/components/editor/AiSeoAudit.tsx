@@ -132,6 +132,21 @@ const AiSeoAudit = ({ value, onChange }: Props) => {
                     {applied[i] ? <><Check className="w-3 h-3 mr-1" />Applied</> : "Apply suggestion"}
                   </Button>
                 )}
+                {!it.field && it.content_action?.action && (() => {
+                  const meta = actionMeta[it.content_action.action] ?? actionMeta.insert_heading;
+                  const A = meta.icon;
+                  return (
+                    <Button
+                      size="sm" variant={applied[i] ? "secondary" : "outline"} className="h-7 text-xs"
+                      onClick={() => applyContent(i, it)} disabled={applied[i]}
+                    >
+                      {applied[i]
+                        ? <><Check className="w-3 h-3 mr-1" />Applied</>
+                        : <><A className="w-3 h-3 mr-1" />{meta.label}</>}
+                    </Button>
+                  );
+                })()}
+
               </li>
             );
           })}
