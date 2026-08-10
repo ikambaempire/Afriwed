@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSiteStrings } from "@/hooks/useSiteStrings";
-import { Loader2, Plus, Save, Search } from "lucide-react";
+import { Loader2, Plus, Save, Search, Trash2 } from "lucide-react";
 
-type Category = { id: string; name: string; slug: string };
+type Category = { id: string; name: string; name_rw?: string | null; slug: string };
 type Post = { id: string; title: string; excerpt: string | null; slug: string };
 type SiteString = { key: string; value_en: string; value_rw: string; description: string | null };
 
