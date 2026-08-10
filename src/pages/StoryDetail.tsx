@@ -92,14 +92,14 @@ const StoryDetail = () => {
           description: (post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 200),
           datePublished: post.published_at,
           dateModified: post.updated_at || post.published_at,
-          mainEntityOfPage: `https://haruwa1.lovable.app/stories/${post.slug}`,
+          mainEntityOfPage: `https://afriwedd.lovable.app/stories/${post.slug}`,
           author: post.author ? {
             "@type": "Person",
             name: post.author.display_name,
-            url: post.author.slug ? `https://haruwa1.lovable.app/authors/${post.author.slug}` : undefined,
+            url: post.author.slug ? `https://afriwedd.lovable.app/authors/${post.author.slug}` : undefined,
           } : undefined,
           image: post.featured_image_url ? [post.featured_image_url] : undefined,
-          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://haruwa1.lovable.app" },
+          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://afriwedd.lovable.app" },
         })}</script>
       </Helmet>
       <Header />

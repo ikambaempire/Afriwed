@@ -2,7 +2,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://haruwa1.lovable.app";
+const BASE_URL = "https://afriwedd.lovable.app";
 const SUPA_URL = "https://uoxajklqakmjppejqlor.supabase.co";
 const ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVveGFqa2xxYWttanBwZWpxbG9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjczNjQsImV4cCI6MjA4NjkwMzM2NH0.rdPH61-HY7GWUeY4pot7ALOHP5TrbHwmvEaRlCO33Ms";
