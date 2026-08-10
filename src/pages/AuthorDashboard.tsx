@@ -75,6 +75,8 @@ const AuthorDashboard = () => {
   const [contentRev, setContentRev] = useState(0);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [catSearch, setCatSearch] = useState("");
+
   const [allAuthors, setAllAuthors] = useState<any[]>([]);
   const [publishAs, setPublishAs] = useState<string>("");
 
