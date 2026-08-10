@@ -118,7 +118,7 @@ const AuthorDashboard = () => {
     }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
-    const { data: cats } = await supabase.from("blog_categories").select("id,name,slug").order("name");
+    const { data: cats } = await supabase.from("blog_categories").select("id,name,name_rw,slug").order("name");
     setCategories(cats ?? []);
     const { data: authors } = await (supabase as any).from("blog_authors").select("id,display_name").order("display_name");
     setAllAuthors(authors ?? []);
