@@ -1,0 +1,1 @@
+ALTER TABLE public.blog_categories ADD COLUMN IF NOT EXISTS name_rw text;
