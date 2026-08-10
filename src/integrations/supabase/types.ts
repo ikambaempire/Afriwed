@@ -169,6 +169,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          name_rw: string | null
           parent_slug: string | null
           slug: string
           wp_term_id: number | null
@@ -178,6 +179,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          name_rw?: string | null
           parent_slug?: string | null
           slug: string
           wp_term_id?: number | null
@@ -187,6 +189,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          name_rw?: string | null
           parent_slug?: string | null
           slug?: string
           wp_term_id?: number | null

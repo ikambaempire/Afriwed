@@ -75,6 +75,8 @@ const AuthorDashboard = () => {
   const [contentRev, setContentRev] = useState(0);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [catSearch, setCatSearch] = useState("");
+
   const [allAuthors, setAllAuthors] = useState<any[]>([]);
   const [publishAs, setPublishAs] = useState<string>("");
 
@@ -116,7 +118,7 @@ const AuthorDashboard = () => {
     }
     const { data } = await supabase.from("blog_posts").select("*").eq("author_id", authorId!).order("updated_at", { ascending: false });
     setPosts(data ?? []);
-    const { data: cats } = await supabase.from("blog_categories").select("id,name,slug").order("name");
+    const { data: cats } = await supabase.from("blog_categories").select("id,name,name_rw,slug").order("name");
     setCategories(cats ?? []);
     const { data: authors } = await (supabase as any).from("blog_authors").select("id,display_name").order("display_name");
     setAllAuthors(authors ?? []);
@@ -390,23 +392,38 @@ const AuthorDashboard = () => {
 
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Categories *</Label>
+                <Input
+                  className="mt-2 h-8 text-xs"
+                  placeholder="Search categories (English / Kinyarwanda)…"
+                  value={catSearch}
+                  onChange={e => setCatSearch(e.target.value)}
+                />
                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto mt-2 p-1">
-                  {categories.map(c => {
-                    const on = selectedCats.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
-                      >
-                        {c.name}
-                      </button>
-                    );
-                  })}
+                  {categories
+                    .filter(c => {
+                      const q = catSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return `${c.name} ${c.name_rw || ""} ${c.slug}`.toLowerCase().includes(q);
+                    })
+                    .map(c => {
+                      const on = selectedCats.includes(c.id);
+                      const label = form.language === "rw" ? (c.name_rw || c.name) : c.name;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          title={c.name_rw ? `${c.name} · ${c.name_rw}` : c.name}
+                          onClick={() => setSelectedCats(s => on ? s.filter(x => x !== c.id) : [...s, c.id])}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
                   {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories available yet.</p>}
                 </div>
               </div>
+
 
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Featured image</Label>
