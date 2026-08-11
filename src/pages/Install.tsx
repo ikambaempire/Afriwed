@@ -66,7 +66,7 @@ const Install = () => {
           <Card className="p-8 mb-6 shadow-card">
             <div className="flex flex-col items-center gap-4">
               <img
-                src="/app-icon-512.png"
+                src="/app-icon-512-v2.png?v=2"
                 alt="Afriwedd app icon"
                 width={120}
                 height={120}
