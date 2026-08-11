@@ -29,6 +29,39 @@ function plainText(value: string | null): string {
   return (value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+const FALLBACK_IMAGE = `${SITE_URL}/app-icon-512.png`;
+
+// Social crawlers (WhatsApp/Facebook) reject webp/avif and choke on very large files.
+// Normalise every featured image to a crawler-safe, correctly sized URL.
+function shareImage(raw: string | null): { url: string; type: string } {
+  if (!raw) return { url: FALLBACK_IMAGE, type: "image/png" };
+  let url = raw.trim();
+  if (url.startsWith("//")) url = `https:${url}`;
+  if (!/^https?:\/\//i.test(url)) return { url: FALLBACK_IMAGE, type: "image/png" };
+  url = url.replace(/^http:\/\//i, "https://");
+
+  const ext = (url.split("?")[0].split(".").pop() ?? "").toLowerCase();
+
+  if (ext === "webp" || ext === "avif") {
+    // Convert unsupported formats to JPEG through an image proxy.
+    const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(
+      url.replace(/^https?:\/\//i, ""),
+    )}&w=1200&h=630&fit=cover&output=jpg&q=82`;
+    return { url: proxied, type: "image/jpeg" };
+  }
+
+  if (url.includes("/storage/v1/object/public/")) {
+    const rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    const sep = rendered.includes("?") ? "&" : "?";
+    return {
+      url: `${rendered}${sep}width=1200&height=630&resize=cover&format=origin`,
+      type: ext === "png" ? "image/png" : "image/jpeg",
+    };
+  }
+
+  return { url, type: ext === "png" ? "image/png" : "image/jpeg" };
+}
+
 function removeFallbackMetadata(html: string): string {
   return html
     .replace(/\s*<title>[\s\S]*?<\/title>/i, "")
