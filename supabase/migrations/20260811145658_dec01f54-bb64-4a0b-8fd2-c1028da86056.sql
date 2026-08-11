@@ -1,0 +1,2 @@
+REVOKE SELECT ON public.blog_comments FROM anon;
+GRANT SELECT (id, wp_comment_id, post_id, parent_wp_comment_id, author_name, content, approved, user_id, created_at, hidden) ON public.blog_comments TO anon;

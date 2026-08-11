@@ -24,7 +24,7 @@ const AuthorProfile = () => {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: a } = await (supabase as any).from("blog_authors").select("*").eq("slug", slug!).maybeSingle();
+      const { data: a } = await (supabase as any).from("blog_authors").select("id, display_name, avatar_url, bio, slug, user_id, featured_wedding_ids, social_links").eq("slug", slug!).maybeSingle();
       setAuthor(a);
       if (a) {
         const ids: string[] = Array.isArray(a.featured_wedding_ids) ? a.featured_wedding_ids : [];
