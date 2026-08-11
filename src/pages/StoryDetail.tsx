@@ -65,7 +65,7 @@ const StoryDetail = () => {
           }
         }
         const { data: cms } = await supabase.from("blog_comments")
-          .select("*").eq("post_id", p.id).eq("approved", true).order("created_at", { ascending: true });
+          .select("id, post_id, author_name, content, approved, created_at, hidden, user_id").eq("post_id", p.id).eq("approved", true).order("created_at", { ascending: true });
         setComments(cms ?? []);
       }
       setLoading(false);
