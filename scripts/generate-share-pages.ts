@@ -29,7 +29,7 @@ function plainText(value: string | null): string {
   return (value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-const FALLBACK_IMAGE = `${SITE_URL}/app-icon-512.png`;
+const FALLBACK_IMAGE = `${SITE_URL}/app-icon-512-v2.png`;
 
 // Social crawlers (WhatsApp/Facebook) reject webp/avif and choke on very large files.
 // Normalise every featured image to a crawler-safe, correctly sized URL.
