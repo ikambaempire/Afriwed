@@ -102,8 +102,11 @@ const StoryDetail = () => {
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="og:url" content={`https://afriwedd.com/stories/${post.slug}`} />
-        {post.featured_image_url && <meta property="og:image" content={post.featured_image_url} />}
-        {post.featured_image_url && <meta name="twitter:image" content={post.featured_image_url} />}
+        {shareImage(post.featured_image_url) && <meta property="og:image" content={shareImage(post.featured_image_url)!} />}
+        {shareImage(post.featured_image_url) && <meta property="og:image:secure_url" content={shareImage(post.featured_image_url)!} />}
+        {shareImage(post.featured_image_url) && <meta property="og:image:width" content="1200" />}
+        {shareImage(post.featured_image_url) && <meta property="og:image:height" content="630" />}
+        {shareImage(post.featured_image_url) && <meta name="twitter:image" content={shareImage(post.featured_image_url)!} />}
 
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
