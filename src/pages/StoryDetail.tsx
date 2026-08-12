@@ -30,6 +30,12 @@ function shareImage(raw?: string | null): string | null {
   return url;
 }
 
+function firstArticleImage(html?: string | null): string | null {
+  if (!html) return null;
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] ?? null;
+}
+
 
 
 const StoryDetail = () => {
@@ -90,6 +96,8 @@ const StoryDetail = () => {
   if (loading) return (<><Header /><main className="pt-24 container mx-auto px-4"><p className="text-muted-foreground">Loading…</p></main></>);
   if (!post) return (<><Header /><main className="pt-24 container mx-auto px-4 text-center"><h1 className="font-display text-3xl mb-4">Story not found</h1><Link to="/stories" className="text-primary">← Back to stories</Link></main></>);
 
+  const socialImage = shareImage(post.featured_image_url || firstArticleImage(post.content_html));
+
   return (
     <>
       <Helmet>
@@ -102,11 +110,12 @@ const StoryDetail = () => {
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="og:url" content={`https://afriwedd.com/stories/${post.slug}`} />
-        {shareImage(post.featured_image_url) && <meta property="og:image" content={shareImage(post.featured_image_url)!} />}
-        {shareImage(post.featured_image_url) && <meta property="og:image:secure_url" content={shareImage(post.featured_image_url)!} />}
-        {shareImage(post.featured_image_url) && <meta property="og:image:width" content="1200" />}
-        {shareImage(post.featured_image_url) && <meta property="og:image:height" content="630" />}
-        {shareImage(post.featured_image_url) && <meta name="twitter:image" content={shareImage(post.featured_image_url)!} />}
+        {socialImage && <meta property="og:image" content={socialImage} />}
+        {socialImage && <meta property="og:image:secure_url" content={socialImage} />}
+        {socialImage && <meta property="og:image:type" content="image/jpeg" />}
+        {socialImage && <meta property="og:image:width" content="1200" />}
+        {socialImage && <meta property="og:image:height" content="630" />}
+        {socialImage && <meta name="twitter:image" content={socialImage} />}
 
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",

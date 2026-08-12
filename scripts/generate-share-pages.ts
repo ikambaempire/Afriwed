@@ -15,6 +15,7 @@ type Story = {
   meta_title: string | null;
   meta_description: string | null;
   featured_image_url: string | null;
+  content_html: string | null;
 };
 
 function escapeHtml(value: string): string {
@@ -30,6 +31,12 @@ function plainText(value: string | null): string {
 }
 
 const FALLBACK_IMAGE = `${SITE_URL}/app-icon-512-v2.png`;
+
+function firstArticleImage(html: string | null): string | null {
+  if (!html) return null;
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] ?? null;
+}
 
 // Social crawlers (WhatsApp/Facebook) reject webp/avif and choke on very large files.
 // Normalise every featured image to a crawler-safe, correctly sized URL.
@@ -71,7 +78,7 @@ function removeFallbackMetadata(html: string): string {
 }
 
 async function fetchPublishedStories(): Promise<Story[]> {
-  const select = "slug,title,excerpt,meta_title,meta_description,featured_image_url";
+  const select = "slug,title,excerpt,meta_title,meta_description,featured_image_url,content_html";
   const response = await fetch(
     `${API_URL}/rest/v1/blog_posts?select=${select}&status=eq.publish&slug=not.is.null`,
     {
@@ -101,7 +108,10 @@ async function main() {
       plainText(story.meta_description || story.excerpt) ||
       `Read ${plainText(story.title)} on Afriwedd.`
     ).slice(0, 160);
-    const { url: image, type: imageType } = shareImage(story.featured_image_url);
+    // Always prefer the story's featured image. Imported stories that predate
+    // that field fall back to their first article image, never the site preview.
+    const storyImage = story.featured_image_url || firstArticleImage(story.content_html);
+    const { url: image, type: imageType } = shareImage(storyImage);
     const metadata = `
     <title>${escapeHtml(title)} — Afriwedd</title>
     <meta name="description" content="${escapeHtml(description)}" />
