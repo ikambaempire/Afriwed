@@ -3,7 +3,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-const SITE_URL = "https://afriwedd.com";
+const SITE_URL = "https://afriwedd.lovable.app";
 const API_URL = "https://uoxajklqakmjppejqlor.supabase.co";
 const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVveGFqa2xxYWttanBwZWpxbG9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjczNjQsImV4cCI6MjA4NjkwMzM2NH0.rdPH61-HY7GWUeY4pot7ALOHP5TrbHwmvEaRlCO33Ms";

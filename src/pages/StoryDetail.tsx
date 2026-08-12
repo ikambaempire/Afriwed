@@ -104,12 +104,12 @@ const StoryDetail = () => {
         <title>{(post.meta_title || post.title)} — Afriwedd</title>
         <meta name="description" content={(post.meta_description || post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
         {post.focus_keyword && <meta name="keywords" content={post.focus_keyword} />}
-        <link rel="canonical" href={`https://afriwedd.com/stories/${post.slug}`} />
+        <link rel="canonical" href={`https://afriwedd.lovable.app/stories/${post.slug}`} />
         <meta property="og:title" content={post.meta_title || post.title} />
         <meta property="og:description" content={(post.meta_description || post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 155)} />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="og:url" content={`https://afriwedd.com/stories/${post.slug}`} />
+        <meta property="og:url" content={`https://afriwedd.lovable.app/stories/${post.slug}`} />
         {socialImage && <meta property="og:image" content={socialImage} />}
         {socialImage && <meta property="og:image:secure_url" content={socialImage} />}
         {socialImage && <meta property="og:image:type" content="image/jpeg" />}
@@ -124,14 +124,14 @@ const StoryDetail = () => {
           description: (post.excerpt || "").replace(/<[^>]+>/g, "").slice(0, 200),
           datePublished: post.published_at,
           dateModified: post.updated_at || post.published_at,
-          mainEntityOfPage: `https://afriwedd.com/stories/${post.slug}`,
+          mainEntityOfPage: `https://afriwedd.lovable.app/stories/${post.slug}`,
           author: post.author ? {
             "@type": "Person",
             name: post.author.display_name,
-            url: post.author.slug ? `https://afriwedd.com/authors/${post.author.slug}` : undefined,
+            url: post.author.slug ? `https://afriwedd.lovable.app/authors/${post.author.slug}` : undefined,
           } : undefined,
           image: post.featured_image_url ? [post.featured_image_url] : undefined,
-          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://afriwedd.com" },
+          publisher: { "@type": "Organization", name: "Afriwedd", url: "https://afriwedd.lovable.app" },
         })}</script>
       </Helmet>
       <Header />
