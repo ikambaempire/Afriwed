@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "bunx tsx scripts/generate-sitemap.ts || true",
-    "prebuild": "bunx tsx scripts/generate-sitemap.ts || true",
+    "predev": "npx --yes tsx scripts/generate-sitemap.ts || true",
+    "prebuild": "npx --yes tsx scripts/generate-sitemap.ts || true",
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "bunx tsx scripts/generate-share-pages.ts",
+    "postbuild": "npx --yes tsx scripts/generate-share-pages.ts || true",
+
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
