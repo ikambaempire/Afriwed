@@ -235,6 +235,41 @@ const AuthorsManagerTab = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!pwAuthor} onOpenChange={(o) => { if (!o) { setPwAuthor(null); setPwResult(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Set password for {pwAuthor?.display_name}</DialogTitle></DialogHeader>
+          {pwResult ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Share these credentials with the author. The password won't be shown again.</p>
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
+                <p><span className="text-muted-foreground">Email:</span> {pwResult.email}</p>
+                <p><span className="text-muted-foreground">Password:</span> <span className="font-mono">{pwResult.password}</span></p>
+              </div>
+              <Button onClick={copyCredentials} className="w-full"><Copy className="w-3 h-3 mr-1" />Copy credentials</Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {pwAuthor?.user_id
+                  ? "This resets the author's login password immediately."
+                  : "No account is linked yet — one will be created using their email address."}
+              </p>
+              <div>
+                <Label>Password</Label>
+                <div className="flex gap-2">
+                  <Input value={pwValue} onChange={e => setPwValue(e.target.value)} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => setPwValue(genPassword())}><RotateCw className="w-3 h-3" /></Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPwAuthor(null)}>Cancel</Button>
+                <Button onClick={savePassword} disabled={pwSaving}>{pwSaving ? "Saving…" : "Set password"}</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
