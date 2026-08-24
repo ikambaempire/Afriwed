@@ -277,7 +277,7 @@ const AuthorDashboard = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold truncate">{p.title}</h3>
-                              <Badge variant={p.status === "publish" ? "default" : "secondary"} className="shrink-0">{p.status}</Badge>
+                              <Badge variant={p.status === "publish" ? "default" : p.status === "pending" ? "outline" : "secondary"} className="shrink-0">{statusLabel(p.status)}</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground flex items-center gap-3">
                               <span><Eye className="w-3 h-3 inline mr-1" />{p.view_count || 0}</span>
@@ -287,9 +287,10 @@ const AuthorDashboard = () => {
                           </div>
                           <div className="flex gap-1">
                             {p.status === "publish" && <Button asChild size="sm" variant="ghost"><Link to={`/stories/${p.slug}`} target="_blank"><Eye className="w-4 h-4" /></Link></Button>}
-                            <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><PenLine className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            {p.status !== "publish" && <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><PenLine className="w-4 h-4" /></Button>}
+                            {p.status !== "publish" && <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                           </div>
+
                         </div>
                       ))}
                     </div>
