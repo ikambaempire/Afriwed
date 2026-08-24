@@ -253,8 +253,11 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
-  const openStoryEditor = (story: any) => {
+  const openStoryEditor = async (story: any) => {
     setEditingStory(story);
+    setReviewNotes(story.review_notes || "");
+    setStoryCatSearch("");
+    setStoryContentRev((r) => r + 1);
     setStoryForm({
       title: story.title || "",
       slug: story.slug || "",
@@ -263,18 +266,50 @@ const AdminDashboard = () => {
       featured_image_url: story.featured_image_url || "",
       status: story.status || "draft",
       language: story.language || "en",
+      meta_title: story.meta_title || "",
+      meta_description: story.meta_description || "",
+      focus_keyword: story.focus_keyword || "",
+      canonical_url: story.canonical_url || "",
+      og_image_url: story.og_image_url || "",
     });
+    const [{ data: cats }, { data: links }] = await Promise.all([
+      supabase.from("blog_categories").select("id,name,name_rw,slug").order("name"),
+      supabase.from("blog_post_categories").select("category_id").eq("post_id", story.id),
+    ]);
+    setStoryCategories(cats ?? []);
+    setStorySelectedCats((links ?? []).map((l: any) => l.category_id));
     setStoryEditorOpen(true);
   };
 
-  const saveStory = async () => {
+  /** Sends an in-app notification to the story's author. */
+  const notifyAuthor = async (story: any, type: string, title: string, body: string, link?: string) => {
+    if (!story?.author_id) return;
+    const { data: author } = await (supabase as any)
+      .from("blog_authors").select("user_id").eq("id", story.author_id).maybeSingle();
+    if (!author?.user_id) return;
+    const { error } = await (supabase as any).from("notifications").insert({
+      user_id: author.user_id, type, title, body, link: link || "/author-dashboard",
+    });
+    if (error) toast({ title: "Author not notified", description: error.message, variant: "destructive" });
+  };
+
+  const syncStoryCategories = async (postId: string) => {
+    await supabase.from("blog_post_categories").delete().eq("post_id", postId);
+    if (storySelectedCats.length) {
+      const { error } = await supabase.from("blog_post_categories")
+        .insert(storySelectedCats.map((c) => ({ post_id: postId, category_id: c })));
+      if (error) toast({ title: "Categories not saved", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const saveStory = async (statusOverride?: string, opts?: { notifyType?: string; close?: boolean }) => {
     if (!editingStory || !storyForm.title.trim()) {
       toast({ title: "Story title is required", variant: "destructive" });
       return;
     }
     setStorySaving(true);
     try {
-      const nextStatus = storyForm.status;
+      const nextStatus = statusOverride || storyForm.status;
       const payload: any = {
         title: storyForm.title.trim(),
         slug: storyForm.slug.trim() || slugify(storyForm.title),
@@ -283,12 +318,39 @@ const AdminDashboard = () => {
         featured_image_url: storyForm.featured_image_url || null,
         status: nextStatus,
         language: storyForm.language,
+        meta_title: storyForm.meta_title || null,
+        meta_description: storyForm.meta_description || null,
+        focus_keyword: storyForm.focus_keyword || null,
+        canonical_url: storyForm.canonical_url || null,
+        og_image_url: storyForm.og_image_url || null,
       };
+      if (opts?.notifyType) {
+        payload.review_notes = reviewNotes || null;
+        payload.reviewed_at = new Date().toISOString();
+      }
       if (nextStatus === "publish" && !editingStory.published_at) payload.published_at = new Date().toISOString();
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editingStory.id);
       if (error) throw error;
-      toast({ title: "Story updated" });
-      setStoryEditorOpen(false);
+      await syncStoryCategories(editingStory.id);
+
+      if (opts?.notifyType === "approved") {
+        await notifyAuthor(editingStory, "approved", `Approved & published: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Your story is now live on Afriwedd.", `/stories/${payload.slug}`);
+      } else if (opts?.notifyType === "changes_requested") {
+        await notifyAuthor(editingStory, "changes_requested", `Changes requested: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Please review and resubmit your story.");
+      } else if (opts?.notifyType === "rejected") {
+        await notifyAuthor(editingStory, "rejected", `Rejected: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Your story was not accepted for publication.");
+      }
+
+      toast({
+        title: opts?.notifyType === "approved" ? "Published — author notified"
+          : opts?.notifyType === "changes_requested" ? "Changes requested — author notified"
+            : opts?.notifyType === "rejected" ? "Story rejected — author notified" : "Story saved",
+      });
+      setStoryForm((f: any) => ({ ...f, status: nextStatus, slug: payload.slug }));
+      if (opts?.close !== false) setStoryEditorOpen(false);
       fetchAll();
     } catch (error: any) {
       toast({ title: "Story update failed", description: error.message, variant: "destructive" });
@@ -296,6 +358,7 @@ const AdminDashboard = () => {
       setStorySaving(false);
     }
   };
+
 
   const updateStoryStatus = async (story: any, status: "draft" | "publish") => {
     const payload: any = { status };
