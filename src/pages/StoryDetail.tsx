@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import StoryShareButton from "@/components/stories/StoryShareButton";
 import { toast } from "sonner";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 
@@ -149,6 +150,13 @@ const StoryDetail = () => {
                   : <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>
               )}
               {post.published_at && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.published_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>}
+              <StoryShareButton
+                slug={post.slug}
+                title={post.title}
+                excerpt={post.excerpt}
+                version={post.updated_at || post.published_at}
+                className="ml-auto"
+              />
             </div>
           </div>
 
