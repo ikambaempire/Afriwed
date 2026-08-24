@@ -1167,7 +1167,7 @@ const AdminDashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h3 className="font-semibold text-foreground line-clamp-1">{story.title}</h3>
-                            <Badge variant={story.status === "publish" ? "default" : "secondary"}>{story.status === "publish" ? "Published" : "Hidden"}</Badge>
+                            <Badge variant={story.status === "publish" ? "default" : story.status === "pending" ? "outline" : "secondary"}>{story.status === "publish" ? "Published" : story.status === "pending" ? "Pending review" : "Hidden"}</Badge>
                             <Badge variant="outline">{(story.language || "en") === "rw" ? "Kinyarwanda" : "English"}</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-1">
