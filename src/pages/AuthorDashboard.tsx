@@ -170,9 +170,10 @@ const AuthorDashboard = () => {
   };
 
   const save = async (statusOverride?: string) => {
-    const status = statusOverride || form.status;
+    const status = statusOverride || (form.status === "publish" ? "pending" : form.status);
     if (!form.title.trim()) { toast.error("Title is required"); return; }
     if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
+    if (editing?.status === "publish") { toast.error("This story is published. Ask an admin to make changes."); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: formatArticle(form.content_html || ""),
@@ -185,23 +186,24 @@ const AuthorDashboard = () => {
       og_image_url: form.og_image_url || null,
       author_id: publishAs || authorId,
     };
-    if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
+    const successMsg = status === "pending" ? "Submitted for admin review" : "Draft saved";
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       await syncCategories(editing.id);
-      toast.success(status === "publish" ? "Article published" : "Draft saved");
+      toast.success(successMsg);
     } else {
       const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("*").single();
       if (error) return toast.error(error.message);
       if (created) { await syncCategories(created.id); setEditing(created); }
-      toast.success(status === "publish" ? "Article published" : "Draft saved");
+      toast.success(successMsg);
     }
     setForm((f: any) => ({ ...f, status, slug }));
-    if (status === "publish") setOpen(false);
+    if (status === "pending") setOpen(false);
     refresh();
   };
+
 
 
 
