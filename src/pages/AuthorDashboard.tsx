@@ -223,8 +223,11 @@ const AuthorDashboard = () => {
   };
 
   const published = posts.filter(p => p.status === "publish");
-  const drafts = posts.filter(p => p.status !== "publish");
+  const inReview = posts.filter(p => p.status === "pending");
+  const drafts = posts.filter(p => p.status !== "publish" && p.status !== "pending");
   const totalViews = posts.reduce((s, p) => s + (p.view_count || 0), 0);
+  const statusLabel = (s: string) => s === "publish" ? "Published" : s === "pending" ? "In review" : "Draft";
+
 
   return (
     <>
