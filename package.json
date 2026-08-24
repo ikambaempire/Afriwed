@@ -8,7 +8,7 @@
     "prebuild": "npx --yes tsx scripts/generate-sitemap.ts || true",
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "npx --yes tsx scripts/generate-share-pages.ts || true",
+    "postbuild": "npx --yes tsx scripts/generate-share-pages.ts",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

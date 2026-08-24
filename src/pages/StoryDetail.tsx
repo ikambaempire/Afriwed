@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import StoryShareButton from "@/components/stories/StoryShareButton";
 import { toast } from "sonner";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 
@@ -96,7 +97,7 @@ const StoryDetail = () => {
   if (loading) return (<><Header /><main className="pt-24 container mx-auto px-4"><p className="text-muted-foreground">Loading…</p></main></>);
   if (!post) return (<><Header /><main className="pt-24 container mx-auto px-4 text-center"><h1 className="font-display text-3xl mb-4">Story not found</h1><Link to="/stories" className="text-primary">← Back to stories</Link></main></>);
 
-  const socialImage = shareImage(post.featured_image_url || firstArticleImage(post.content_html));
+  const socialImage = shareImage(post.featured_image_url || post.og_image_url || firstArticleImage(post.content_html));
 
   return (
     <>
@@ -149,6 +150,13 @@ const StoryDetail = () => {
                   : <span className="flex items-center gap-1"><User className="w-3 h-3" />{post.author.display_name}</span>
               )}
               {post.published_at && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.published_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>}
+              <StoryShareButton
+                slug={post.slug}
+                title={post.title}
+                excerpt={post.excerpt}
+                version={post.updated_at || post.published_at}
+                className="ml-auto"
+              />
             </div>
           </div>
 

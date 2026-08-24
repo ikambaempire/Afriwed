@@ -15,6 +15,7 @@ type Story = {
   meta_title: string | null;
   meta_description: string | null;
   featured_image_url: string | null;
+  og_image_url: string | null;
   content_html: string | null;
 };
 
@@ -30,8 +31,6 @@ function plainText(value: string | null): string {
   return (value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-const FALLBACK_IMAGE = `${SITE_URL}/app-icon-512-v2.png`;
-
 function firstArticleImage(html: string | null): string | null {
   if (!html) return null;
   const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
@@ -40,11 +39,11 @@ function firstArticleImage(html: string | null): string | null {
 
 // Social crawlers (WhatsApp/Facebook) reject webp/avif and choke on very large files.
 // Normalise every featured image to a crawler-safe, correctly sized URL.
-function shareImage(raw: string | null): { url: string; type: string } {
-  if (!raw) return { url: FALLBACK_IMAGE, type: "image/png" };
+function shareImage(raw: string | null): { url: string; type: string } | null {
+  if (!raw) return null;
   let url = raw.trim();
   if (url.startsWith("//")) url = `https:${url}`;
-  if (!/^https?:\/\//i.test(url)) return { url: FALLBACK_IMAGE, type: "image/png" };
+  if (!/^https?:\/\//i.test(url)) return null;
   url = url.replace(/^http:\/\//i, "https://");
 
   const ext = (url.split("?")[0].split(".").pop() ?? "").toLowerCase();
@@ -73,12 +72,12 @@ function removeFallbackMetadata(html: string): string {
   return html
     .replace(/\s*<title>[\s\S]*?<\/title>/i, "")
     .replace(/\s*<meta\s+name=["']description["'][^>]*>/gi, "")
-    .replace(/\s*<meta\s+(?:property|name)=["'](?:og|twitter):(?:title|description|type|url|image|card)["'][^>]*>/gi, "")
+    .replace(/\s*<meta\s+(?:property|name)=["'](?:og|twitter):(?:site_name|title|description|type|url|image|image:secure_url|image:type|image:width|image:height|image:alt|card)["'][^>]*>/gi, "")
     .replace(/\s*<link\s+rel=["']canonical["'][^>]*>/gi, "");
 }
 
 async function fetchPublishedStories(): Promise<Story[]> {
-  const select = "slug,title,excerpt,meta_title,meta_description,featured_image_url,content_html";
+  const select = "slug,title,excerpt,meta_title,meta_description,featured_image_url,og_image_url,content_html";
   const response = await fetch(
     `${API_URL}/rest/v1/blog_posts?select=${select}&status=eq.publish&slug=not.is.null`,
     {
@@ -102,7 +101,8 @@ async function main() {
   for (const story of stories) {
     if (!story.slug) continue;
 
-    const canonical = `${SITE_URL}/stories/${encodeURIComponent(story.slug)}`;
+    const encodedSlug = encodeURIComponent(story.slug);
+    const canonical = `${SITE_URL}/stories/${encodedSlug}`;
     const title = plainText(story.meta_title || story.title) || "Afriwedd Story";
     const description = (
       plainText(story.meta_description || story.excerpt) ||
@@ -110,8 +110,13 @@ async function main() {
     ).slice(0, 160);
     // Always prefer the story's featured image. Imported stories that predate
     // that field fall back to their first article image, never the site preview.
-    const storyImage = story.featured_image_url || firstArticleImage(story.content_html);
-    const { url: image, type: imageType } = shareImage(storyImage);
+    const storyImage = story.featured_image_url || story.og_image_url || firstArticleImage(story.content_html);
+    const socialImage = shareImage(storyImage);
+    if (!socialImage) {
+      console.warn(`Skipped ${story.slug}: no story image is available.`);
+      continue;
+    }
+    const { url: image, type: imageType } = socialImage;
     const metadata = `
     <title>${escapeHtml(title)} — Afriwedd</title>
     <meta name="description" content="${escapeHtml(description)}" />
@@ -132,7 +137,7 @@ async function main() {
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${escapeHtml(image)}" />`;
 
-    const output = resolve("dist", "stories", story.slug, "index.html");
+    const output = resolve("dist", "stories", encodedSlug, "index.html");
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, baseHtml.replace("</head>", `${metadata}\n  </head>`));
     generated += 1;
