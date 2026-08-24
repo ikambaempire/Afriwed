@@ -1,11 +1,18 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  # Serve existing files/directories as-is
+  DirectoryIndex index.html
+
+  # Serve generated story pages directly, without a directory redirect.
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^(.+?)/?$ $1/index.html [L]
+
+  # Serve other existing files/directories as-is.
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
-  # Everything else falls back to the SPA entry point
+
+  # Everything else falls back to the SPA entry point.
   RewriteRule . /index.html [L]
 </IfModule>
 

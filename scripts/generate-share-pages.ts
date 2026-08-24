@@ -101,7 +101,8 @@ async function main() {
   for (const story of stories) {
     if (!story.slug) continue;
 
-    const canonical = `${SITE_URL}/stories/${encodeURIComponent(story.slug)}`;
+    const encodedSlug = encodeURIComponent(story.slug);
+    const canonical = `${SITE_URL}/stories/${encodedSlug}`;
     const title = plainText(story.meta_title || story.title) || "Afriwedd Story";
     const description = (
       plainText(story.meta_description || story.excerpt) ||
@@ -136,7 +137,7 @@ async function main() {
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${escapeHtml(image)}" />`;
 
-    const output = resolve("dist", "stories", story.slug, "index.html");
+    const output = resolve("dist", "stories", encodedSlug, "index.html");
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, baseHtml.replace("</head>", `${metadata}\n  </head>`));
     generated += 1;
