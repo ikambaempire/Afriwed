@@ -198,7 +198,9 @@ const Header = () => {
         </div>
 
         {/* Mobile toggle */}
+        <div className="lg:hidden shrink-0"><NotificationBell /></div>
         <button
+
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden p-2 text-foreground shrink-0"
           aria-label="Toggle menu"
