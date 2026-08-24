@@ -187,8 +187,12 @@ const Header = () => {
           )}
 
           {user && (
-            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
+            <div className="flex items-center gap-1">
+              <NotificationBell />
+              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
+            </div>
           )}
+
         </div>
 
         {/* Mobile toggle */}
