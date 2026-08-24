@@ -35,6 +35,43 @@ const AuthorsManagerTab = () => {
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [toDelete, setToDelete] = useState<Author | null>(null);
+  const [pwAuthor, setPwAuthor] = useState<Author | null>(null);
+  const [pwValue, setPwValue] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwResult, setPwResult] = useState<{ email: string; password: string } | null>(null);
+
+  const genPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%";
+    const arr = crypto.getRandomValues(new Uint32Array(14));
+    return Array.from(arr, n => chars[n % chars.length]).join("");
+  };
+
+  const openPassword = (a: Author) => {
+    setPwResult(null);
+    setPwValue(genPassword());
+    setPwAuthor(a);
+  };
+
+  const savePassword = async () => {
+    if (!pwAuthor) return;
+    if (pwValue.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return; }
+    setPwSaving(true);
+    const { data, error } = await supabase.functions.invoke("admin-author-password", {
+      body: { author_id: pwAuthor.id, password: pwValue },
+    });
+    setPwSaving(false);
+    const errMsg = (error as any)?.message || (data as any)?.error;
+    if (errMsg) { toast({ title: "Could not set password", description: errMsg, variant: "destructive" }); return; }
+    setPwResult({ email: (data as any).email, password: pwValue });
+    toast({ title: (data as any).created ? "Account created" : "Password updated" });
+    load();
+  };
+
+  const copyCredentials = async () => {
+    if (!pwResult) return;
+    await navigator.clipboard.writeText(`Afriwedd login\nEmail: ${pwResult.email}\nPassword: ${pwResult.password}`);
+    toast({ title: "Credentials copied" });
+  };
 
   const load = async () => {
     setLoading(true);
