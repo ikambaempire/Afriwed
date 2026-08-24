@@ -1459,7 +1459,9 @@ const AdminDashboard = () => {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="publish">Published</SelectItem>
+                        <SelectItem value="pending">Pending review</SelectItem>
                         <SelectItem value="draft">Hidden / Draft</SelectItem>
+
                       </SelectContent>
                     </Select>
                   </div>
