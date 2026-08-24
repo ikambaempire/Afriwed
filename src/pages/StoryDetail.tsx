@@ -97,7 +97,7 @@ const StoryDetail = () => {
   if (loading) return (<><Header /><main className="pt-24 container mx-auto px-4"><p className="text-muted-foreground">Loading…</p></main></>);
   if (!post) return (<><Header /><main className="pt-24 container mx-auto px-4 text-center"><h1 className="font-display text-3xl mb-4">Story not found</h1><Link to="/stories" className="text-primary">← Back to stories</Link></main></>);
 
-  const socialImage = shareImage(post.featured_image_url || firstArticleImage(post.content_html));
+  const socialImage = shareImage(post.featured_image_url || post.og_image_url || firstArticleImage(post.content_html));
 
   return (
     <>

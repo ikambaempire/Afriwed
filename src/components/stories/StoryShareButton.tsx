@@ -15,7 +15,10 @@ const StoryShareButton = ({ slug, title, excerpt, version, className }: StorySha
   const [copied, setCopied] = useState(false);
 
   const shareStory = async () => {
-    const url = new URL(`/stories/${encodeURIComponent(slug)}`, window.location.origin);
+    const shareOrigin = window.location.hostname.endsWith("lovable.app")
+      ? "https://afriwedd.lovable.app"
+      : window.location.origin;
+    const url = new URL(`/stories/${encodeURIComponent(slug)}`, shareOrigin);
     if (version) url.searchParams.set("share", new Date(version).getTime().toString(36));
 
     const shareData = {

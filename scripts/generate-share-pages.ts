@@ -72,7 +72,7 @@ function removeFallbackMetadata(html: string): string {
   return html
     .replace(/\s*<title>[\s\S]*?<\/title>/i, "")
     .replace(/\s*<meta\s+name=["']description["'][^>]*>/gi, "")
-    .replace(/\s*<meta\s+(?:property|name)=["'](?:og|twitter):(?:title|description|type|url|image|card)["'][^>]*>/gi, "")
+    .replace(/\s*<meta\s+(?:property|name)=["'](?:og|twitter):(?:site_name|title|description|type|url|image|image:secure_url|image:type|image:width|image:height|image:alt|card)["'][^>]*>/gi, "")
     .replace(/\s*<link\s+rel=["']canonical["'][^>]*>/gi, "");
 }
 
