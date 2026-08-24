@@ -1081,6 +1081,19 @@ const AdminDashboard = () => {
             </TabsContent>
 
             <TabsContent value="stories" className="space-y-4">
+              {pendingStories.length > 0 && (
+                <Card className="border-primary/40 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-primary" />
+                      {pendingStories.length} {pendingStories.length === 1 ? "story" : "stories"} submitted by authors awaiting review
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button size="sm" variant="outline" onClick={() => setStoryStatusFilter("pending")}>Open review queue</Button>
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">All Stories ({filteredStories.length})</CardTitle>
@@ -1095,10 +1108,12 @@ const AdminDashboard = () => {
                       <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="pending">Pending review ({pendingStories.length})</SelectItem>
                         <SelectItem value="publish">Published</SelectItem>
                         <SelectItem value="draft">Hidden / Draft</SelectItem>
                       </SelectContent>
                     </Select>
+
                     <Select value={storyLanguageFilter} onValueChange={setStoryLanguageFilter}>
                       <SelectTrigger><SelectValue placeholder="Language" /></SelectTrigger>
                       <SelectContent>
