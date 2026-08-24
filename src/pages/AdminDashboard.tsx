@@ -25,6 +25,9 @@ import AuthorsManagerTab from "@/components/admin/AuthorsManagerTab";
 
 import { BookOpen, Briefcase } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import GutenbergEditor from "@/components/editor/GutenbergEditor";
+import SeoPanel from "@/components/editor/SeoPanel";
+
 import ContentEditor from "@/components/admin/ContentEditor";
 import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
