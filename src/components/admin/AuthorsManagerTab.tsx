@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Pencil, Trash2, ExternalLink, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, ChevronDown, ChevronRight, RefreshCw, KeyRound, Copy, RotateCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -35,6 +35,43 @@ const AuthorsManagerTab = () => {
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [toDelete, setToDelete] = useState<Author | null>(null);
+  const [pwAuthor, setPwAuthor] = useState<Author | null>(null);
+  const [pwValue, setPwValue] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwResult, setPwResult] = useState<{ email: string; password: string } | null>(null);
+
+  const genPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%";
+    const arr = crypto.getRandomValues(new Uint32Array(14));
+    return Array.from(arr, n => chars[n % chars.length]).join("");
+  };
+
+  const openPassword = (a: Author) => {
+    setPwResult(null);
+    setPwValue(genPassword());
+    setPwAuthor(a);
+  };
+
+  const savePassword = async () => {
+    if (!pwAuthor) return;
+    if (pwValue.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return; }
+    setPwSaving(true);
+    const { data, error } = await supabase.functions.invoke("admin-author-password", {
+      body: { author_id: pwAuthor.id, password: pwValue },
+    });
+    setPwSaving(false);
+    const errMsg = (error as any)?.message || (data as any)?.error;
+    if (errMsg) { toast({ title: "Could not set password", description: errMsg, variant: "destructive" }); return; }
+    setPwResult({ email: (data as any).email, password: pwValue });
+    toast({ title: (data as any).created ? "Account created" : "Password updated" });
+    load();
+  };
+
+  const copyCredentials = async () => {
+    if (!pwResult) return;
+    await navigator.clipboard.writeText(`Afriwedd login\nEmail: ${pwResult.email}\nPassword: ${pwResult.password}`);
+    toast({ title: "Credentials copied" });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -145,6 +182,7 @@ const AuthorsManagerTab = () => {
                           </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => startEdit(a)}><Pencil className="w-3 h-3 mr-1" />Edit</Button>
+                        <Button size="sm" variant="outline" onClick={() => openPassword(a)}><KeyRound className="w-3 h-3 mr-1" />Password</Button>
                         <Button size="sm" variant="destructive" onClick={() => setToDelete(a)}><Trash2 className="w-3 h-3" /></Button>
                       </div>
                     </div>
@@ -194,6 +232,41 @@ const AuthorsManagerTab = () => {
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pwAuthor} onOpenChange={(o) => { if (!o) { setPwAuthor(null); setPwResult(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Set password for {pwAuthor?.display_name}</DialogTitle></DialogHeader>
+          {pwResult ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Share these credentials with the author. The password won't be shown again.</p>
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
+                <p><span className="text-muted-foreground">Email:</span> {pwResult.email}</p>
+                <p><span className="text-muted-foreground">Password:</span> <span className="font-mono">{pwResult.password}</span></p>
+              </div>
+              <Button onClick={copyCredentials} className="w-full"><Copy className="w-3 h-3 mr-1" />Copy credentials</Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {pwAuthor?.user_id
+                  ? "This resets the author's login password immediately."
+                  : "No account is linked yet — one will be created using their email address."}
+              </p>
+              <div>
+                <Label>Password</Label>
+                <div className="flex gap-2">
+                  <Input value={pwValue} onChange={e => setPwValue(e.target.value)} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => setPwValue(genPassword())}><RotateCw className="w-3 h-3" /></Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPwAuthor(null)}>Cancel</Button>
+                <Button onClick={savePassword} disabled={pwSaving}>{pwSaving ? "Saving…" : "Set password"}</Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
