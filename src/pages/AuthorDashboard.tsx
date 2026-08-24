@@ -246,11 +246,14 @@ const AuthorDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Published</p><p className="text-2xl font-bold">{published.length}</p></CardContent></Card>
+            <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">In review</p><p className="text-2xl font-bold">{inReview.length}</p></CardContent></Card>
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Drafts</p><p className="text-2xl font-bold">{drafts.length}</p></CardContent></Card>
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Total views</p><p className="text-2xl font-bold">{totalViews.toLocaleString()}</p></CardContent></Card>
           </div>
+          <p className="text-xs text-muted-foreground mb-8">Articles you submit go to the editorial team for review — an admin reviews, edits and publishes them.</p>
+
 
           <Tabs defaultValue="articles" className="space-y-6">
             <TabsList>
