@@ -165,7 +165,10 @@ const AuthorDashboard = () => {
   const syncCategories = async (postId: string) => {
     await supabase.from("blog_post_categories").delete().eq("post_id", postId);
     if (selectedCats.length) {
-      await supabase.from("blog_post_categories").insert(selectedCats.map(c => ({ post_id: postId, category_id: c })));
+      const { error } = await supabase
+        .from("blog_post_categories")
+        .insert(selectedCats.map(c => ({ post_id: postId, category_id: c })));
+      if (error) toast.error(`Categories not saved: ${error.message}`);
     }
   };
 
