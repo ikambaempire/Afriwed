@@ -357,21 +357,23 @@ const AuthorDashboard = () => {
           editorKey={`${editing?.id || "new"}-${contentRev}`}
           onClose={() => setOpen(false)}
           onSaveDraft={() => save("draft")}
-          onPublish={() => save(form.status === "publish" ? "publish" : "publish")}
-          publishLabel={editing?.status === "publish" ? "Update" : "Publish"}
+          onPublish={() => save("pending")}
+          publishLabel={editing?.status === "pending" ? "Resubmit for review" : "Submit for review"}
           previewUrl={editing?.status === "publish" ? `/stories/${form.slug}` : undefined}
           postPanel={
             <>
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Status</Label>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                <Select value={form.status === "publish" ? "pending" : form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="publish">Published</SelectItem>
+                    <SelectItem value="pending">Submitted for review</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Only admins can publish. Submitted stories go to the editorial review queue.</p>
               </div>
+
 
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Publish as</Label>
