@@ -182,6 +182,7 @@ const AuthorsManagerTab = () => {
                           </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => startEdit(a)}><Pencil className="w-3 h-3 mr-1" />Edit</Button>
+                        <Button size="sm" variant="outline" onClick={() => openPassword(a)}><KeyRound className="w-3 h-3 mr-1" />Password</Button>
                         <Button size="sm" variant="destructive" onClick={() => setToDelete(a)}><Trash2 className="w-3 h-3" /></Button>
                       </div>
                     </div>
