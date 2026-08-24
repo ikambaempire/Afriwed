@@ -13,23 +13,16 @@ import { Calendar, User, ArrowLeft } from "lucide-react";
 
 import { formatArticle } from "@/lib/articleFormat";
 
-// Normalise featured images to crawler-safe URLs (no webp/avif, capped size).
+// Normalise featured images to crawler-safe URLs (exact 1200x630 JPEG).
 function shareImage(raw?: string | null): string | null {
   if (!raw) return null;
   let url = raw.trim();
   if (url.startsWith("//")) url = `https:${url}`;
   if (!/^https?:\/\//i.test(url)) return null;
   url = url.replace(/^http:\/\//i, "https://");
-  const ext = (url.split("?")[0].split(".").pop() ?? "").toLowerCase();
-  if (ext === "webp" || ext === "avif") {
-    return `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//i, ""))}&w=1200&h=630&fit=cover&output=jpg&q=82`;
-  }
-  if (url.includes("/storage/v1/object/public/")) {
-    const rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-    return `${rendered}${rendered.includes("?") ? "&" : "?"}width=1200&height=630&resize=cover&format=origin`;
-  }
-  return url;
+  return `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//i, ""))}&w=1200&h=630&fit=cover&a=attention&output=jpg&q=82`;
 }
+
 
 function firstArticleImage(html?: string | null): string | null {
   if (!html) return null;
