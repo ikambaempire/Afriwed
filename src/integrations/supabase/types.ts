@@ -351,6 +351,8 @@ export type Database = {
           meta_title: string | null
           og_image_url: string | null
           published_at: string | null
+          review_notes: string | null
+          reviewed_at: string | null
           slug: string
           status: string
           title: string
@@ -372,6 +374,8 @@ export type Database = {
           meta_title?: string | null
           og_image_url?: string | null
           published_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
           slug: string
           status?: string
           title: string
@@ -393,6 +397,8 @@ export type Database = {
           meta_title?: string | null
           og_image_url?: string | null
           published_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
           slug?: string
           status?: string
           title?: string
@@ -581,6 +587,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

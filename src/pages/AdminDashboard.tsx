@@ -25,6 +25,9 @@ import AuthorsManagerTab from "@/components/admin/AuthorsManagerTab";
 
 import { BookOpen, Briefcase } from "lucide-react";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import GutenbergEditor from "@/components/editor/GutenbergEditor";
+import SeoPanel from "@/components/editor/SeoPanel";
+
 import ContentEditor from "@/components/admin/ContentEditor";
 import storyFallbackImage from "@/assets/afriwedd-story-fallback.jpg";
 
@@ -117,9 +120,16 @@ const AdminDashboard = () => {
   const [storyEditorOpen, setStoryEditorOpen] = useState(false);
   const [editingStory, setEditingStory] = useState<any>(null);
   const [storySaving, setStorySaving] = useState(false);
-  const [storyForm, setStoryForm] = useState({
+  const [storyForm, setStoryForm] = useState<any>({
     title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+    meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
   });
+  const [storyCategories, setStoryCategories] = useState<any[]>([]);
+  const [storySelectedCats, setStorySelectedCats] = useState<string[]>([]);
+  const [storyCatSearch, setStoryCatSearch] = useState("");
+  const [storyContentRev, setStoryContentRev] = useState(0);
+  const [reviewNotes, setReviewNotes] = useState("");
+
   const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
   const [mirroring, setMirroring] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -246,8 +256,11 @@ const AdminDashboard = () => {
     fetchAll();
   };
 
-  const openStoryEditor = (story: any) => {
+  const openStoryEditor = async (story: any) => {
     setEditingStory(story);
+    setReviewNotes(story.review_notes || "");
+    setStoryCatSearch("");
+    setStoryContentRev((r) => r + 1);
     setStoryForm({
       title: story.title || "",
       slug: story.slug || "",
@@ -256,18 +269,50 @@ const AdminDashboard = () => {
       featured_image_url: story.featured_image_url || "",
       status: story.status || "draft",
       language: story.language || "en",
+      meta_title: story.meta_title || "",
+      meta_description: story.meta_description || "",
+      focus_keyword: story.focus_keyword || "",
+      canonical_url: story.canonical_url || "",
+      og_image_url: story.og_image_url || "",
     });
+    const [{ data: cats }, { data: links }] = await Promise.all([
+      supabase.from("blog_categories").select("id,name,name_rw,slug").order("name"),
+      supabase.from("blog_post_categories").select("category_id").eq("post_id", story.id),
+    ]);
+    setStoryCategories(cats ?? []);
+    setStorySelectedCats((links ?? []).map((l: any) => l.category_id));
     setStoryEditorOpen(true);
   };
 
-  const saveStory = async () => {
+  /** Sends an in-app notification to the story's author. */
+  const notifyAuthor = async (story: any, type: string, title: string, body: string, link?: string) => {
+    if (!story?.author_id) return;
+    const { data: author } = await (supabase as any)
+      .from("blog_authors").select("user_id").eq("id", story.author_id).maybeSingle();
+    if (!author?.user_id) return;
+    const { error } = await (supabase as any).from("notifications").insert({
+      user_id: author.user_id, type, title, body, link: link || "/author-dashboard",
+    });
+    if (error) toast({ title: "Author not notified", description: error.message, variant: "destructive" });
+  };
+
+  const syncStoryCategories = async (postId: string) => {
+    await supabase.from("blog_post_categories").delete().eq("post_id", postId);
+    if (storySelectedCats.length) {
+      const { error } = await supabase.from("blog_post_categories")
+        .insert(storySelectedCats.map((c) => ({ post_id: postId, category_id: c })));
+      if (error) toast({ title: "Categories not saved", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const saveStory = async (statusOverride?: string, opts?: { notifyType?: string; close?: boolean }) => {
     if (!editingStory || !storyForm.title.trim()) {
       toast({ title: "Story title is required", variant: "destructive" });
       return;
     }
     setStorySaving(true);
     try {
-      const nextStatus = storyForm.status;
+      const nextStatus = statusOverride || storyForm.status;
       const payload: any = {
         title: storyForm.title.trim(),
         slug: storyForm.slug.trim() || slugify(storyForm.title),
@@ -276,12 +321,39 @@ const AdminDashboard = () => {
         featured_image_url: storyForm.featured_image_url || null,
         status: nextStatus,
         language: storyForm.language,
+        meta_title: storyForm.meta_title || null,
+        meta_description: storyForm.meta_description || null,
+        focus_keyword: storyForm.focus_keyword || null,
+        canonical_url: storyForm.canonical_url || null,
+        og_image_url: storyForm.og_image_url || null,
       };
+      if (opts?.notifyType) {
+        payload.review_notes = reviewNotes || null;
+        payload.reviewed_at = new Date().toISOString();
+      }
       if (nextStatus === "publish" && !editingStory.published_at) payload.published_at = new Date().toISOString();
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editingStory.id);
       if (error) throw error;
-      toast({ title: "Story updated" });
-      setStoryEditorOpen(false);
+      await syncStoryCategories(editingStory.id);
+
+      if (opts?.notifyType === "approved") {
+        await notifyAuthor(editingStory, "approved", `Approved & published: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Your story is now live on Afriwedd.", `/stories/${payload.slug}`);
+      } else if (opts?.notifyType === "changes_requested") {
+        await notifyAuthor(editingStory, "changes_requested", `Changes requested: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Please review and resubmit your story.");
+      } else if (opts?.notifyType === "rejected") {
+        await notifyAuthor(editingStory, "rejected", `Rejected: “${payload.title}”`,
+          reviewNotes ? `Admin notes: ${reviewNotes}` : "Your story was not accepted for publication.");
+      }
+
+      toast({
+        title: opts?.notifyType === "approved" ? "Published — author notified"
+          : opts?.notifyType === "changes_requested" ? "Changes requested — author notified"
+            : opts?.notifyType === "rejected" ? "Story rejected — author notified" : "Story saved",
+      });
+      setStoryForm((f: any) => ({ ...f, status: nextStatus, slug: payload.slug }));
+      if (opts?.close !== false) setStoryEditorOpen(false);
       fetchAll();
     } catch (error: any) {
       toast({ title: "Story update failed", description: error.message, variant: "destructive" });
@@ -289,6 +361,7 @@ const AdminDashboard = () => {
       setStorySaving(false);
     }
   };
+
 
   const updateStoryStatus = async (story: any, status: "draft" | "publish") => {
     const payload: any = { status };
@@ -1427,70 +1500,134 @@ const AdminDashboard = () => {
           </Tabs>
           )}
 
-          <Dialog open={storyEditorOpen} onOpenChange={setStoryEditorOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit story</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input value={storyForm.title} onChange={(event) => setStoryForm({ ...storyForm, title: event.target.value })} />
+          <GutenbergEditor
+            open={storyEditorOpen}
+            isNew={false}
+            title={storyForm.title}
+            onTitleChange={(v) => setStoryForm((f: any) => ({ ...f, title: v }))}
+            contentHtml={storyForm.content_html}
+            onContentChange={(html) => setStoryForm((f: any) => ({ ...f, content_html: html }))}
+            editorKey={`admin-${editingStory?.id || "new"}-${storyContentRev}`}
+            onClose={() => setStoryEditorOpen(false)}
+            onSaveDraft={() => saveStory(storyForm.status === "publish" ? "publish" : "draft", { close: false })}
+            onPublish={() => saveStory("publish", { notifyType: "approved" })}
+            publishLabel={storySaving ? "Saving…" : editingStory?.status === "pending" ? "Approve & publish" : "Publish"}
+            previewUrl={editingStory?.status === "publish" ? `/stories/${storyForm.slug}` : undefined}
+            postPanel={
+              <>
+                {editingStory?.status === "pending" && (
+                  <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                    <p className="text-xs font-semibold text-primary mb-1">Submitted for review</p>
+                    <p className="text-[11px] text-muted-foreground">Approve &amp; publish, request changes, or reject. Your notes are sent to the author.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label>URL slug</Label>
-                    <Input value={storyForm.slug} onChange={(event) => setStoryForm({ ...storyForm, slug: slugify(event.target.value) })} />
-                  </div>
-                </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label>Featured image</Label>
-                  <StoryImageInput value={storyForm.featured_image_url} onChange={(url) => setStoryForm({ ...storyForm, featured_image_url: url })} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Excerpt</Label>
-                  <Textarea value={storyForm.excerpt} onChange={(event) => setStoryForm({ ...storyForm, excerpt: event.target.value })} rows={2} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Content</Label>
-                  <RichTextEditor key={editingStory?.id || "admin-story"} value={storyForm.content_html} onChange={(html) => setStoryForm((current) => ({ ...current, content_html: html }))} />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select value={storyForm.language} onValueChange={(value) => setStoryForm({ ...storyForm, language: value })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="rw">Kinyarwanda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={storyForm.status} onValueChange={(value) => setStoryForm({ ...storyForm, status: value })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="publish">Published</SelectItem>
-                        <SelectItem value="pending">Pending review</SelectItem>
-                        <SelectItem value="draft">Hidden / Draft</SelectItem>
-
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes to author</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="What should the author know or fix?"
+                  />
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Button size="sm" variant="outline" disabled={storySaving} onClick={() => saveStory("draft", { notifyType: "changes_requested" })}>
+                      Request changes
+                    </Button>
+                    <Button size="sm" variant="destructive" disabled={storySaving} onClick={() => saveStory("draft", { notifyType: "rejected" })}>
+                      Reject
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setStoryEditorOpen(false)}>Cancel</Button>
-                  <Button onClick={saveStory} disabled={storySaving}>{storySaving ? "Saving..." : "Save story"}</Button>
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Status</Label>
+                  <Select value={storyForm.status} onValueChange={(value) => setStoryForm((f: any) => ({ ...f, status: value }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="publish">Published</SelectItem>
+                      <SelectItem value="pending">Pending review</SelectItem>
+                      <SelectItem value="draft">Hidden / Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Language</Label>
+                  <Select value={storyForm.language} onValueChange={(value) => setStoryForm((f: any) => ({ ...f, language: value }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="rw">Kinyarwanda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Categories</Label>
+                  <Input
+                    className="mt-2 h-8 text-xs"
+                    placeholder="Search categories…"
+                    value={storyCatSearch}
+                    onChange={(e) => setStoryCatSearch(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto mt-2 p-1">
+                    {storyCategories
+                      .filter((c) => {
+                        const q = storyCatSearch.trim().toLowerCase();
+                        return !q || `${c.name} ${c.name_rw || ""} ${c.slug}`.toLowerCase().includes(q);
+                      })
+                      .map((c) => {
+                        const on = storySelectedCats.includes(c.id);
+                        const label = storyForm.language === "rw" ? (c.name_rw || c.name) : c.name;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setStorySelectedCats((s) => on ? s.filter((x) => x !== c.id) : [...s, c.id])}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Featured image</Label>
+                  <div className="mt-2">
+                    <StoryImageInput value={storyForm.featured_image_url} onChange={(url) => setStoryForm((f: any) => ({ ...f, featured_image_url: url }))} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Excerpt</Label>
+                  <Textarea className="mt-1" rows={3} value={storyForm.excerpt} onChange={(e) => setStoryForm((f: any) => ({ ...f, excerpt: e.target.value }))} />
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">URL slug</Label>
+                  <Input className="mt-1" value={storyForm.slug} onChange={(e) => setStoryForm((f: any) => ({ ...f, slug: slugify(e.target.value) }))} />
+                </div>
+              </>
+            }
+            seoPanel={
+              <SeoPanel
+                value={{
+                  title: storyForm.title, slug: storyForm.slug, excerpt: storyForm.excerpt, content_html: storyForm.content_html,
+                  meta_title: storyForm.meta_title, meta_description: storyForm.meta_description, focus_keyword: storyForm.focus_keyword,
+                  canonical_url: storyForm.canonical_url, og_image_url: storyForm.og_image_url, featured_image_url: storyForm.featured_image_url,
+                }}
+                onChange={(patch) => {
+                  if ((patch as any).content_html !== undefined) setStoryContentRev((r) => r + 1);
+                  setStoryForm((f: any) => ({ ...f, ...patch }));
+                }}
+              />
+            }
+          />
+
         </div>
       </main>
     </>

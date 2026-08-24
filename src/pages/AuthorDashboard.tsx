@@ -287,6 +287,12 @@ const AuthorDashboard = () => {
                               <span>{new Date(p.updated_at).toLocaleDateString()}</span>
                               <span className="truncate">/{p.slug}</span>
                             </p>
+                            {p.review_notes && p.status !== "publish" && (
+                              <p className="mt-2 text-xs rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-1.5 whitespace-pre-line">
+                                <strong>Editor notes:</strong> {p.review_notes}
+                              </p>
+                            )}
+
                           </div>
                           <div className="flex gap-1">
                             {p.status === "publish" && <Button asChild size="sm" variant="ghost"><Link to={`/stories/${p.slug}`} target="_blank"><Eye className="w-4 h-4" /></Link></Button>}

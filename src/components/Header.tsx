@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import TopAdStrip from "@/components/TopAdStrip";
+import NotificationBell from "@/components/NotificationBell";
+
 import afriwedLogo from "@/assets/afriwed-logo.png";
 import { cn } from "@/lib/utils";
 
@@ -187,12 +189,18 @@ const Header = () => {
           )}
 
           {user && (
-            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
+            <div className="flex items-center gap-1">
+              <NotificationBell />
+              <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-1" />{t("Sign Out")}</Button>
+            </div>
           )}
+
         </div>
 
         {/* Mobile toggle */}
+        <div className="lg:hidden shrink-0"><NotificationBell /></div>
         <button
+
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden p-2 text-foreground shrink-0"
           aria-label="Toggle menu"
