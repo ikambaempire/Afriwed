@@ -117,9 +117,16 @@ const AdminDashboard = () => {
   const [storyEditorOpen, setStoryEditorOpen] = useState(false);
   const [editingStory, setEditingStory] = useState<any>(null);
   const [storySaving, setStorySaving] = useState(false);
-  const [storyForm, setStoryForm] = useState({
+  const [storyForm, setStoryForm] = useState<any>({
     title: "", slug: "", excerpt: "", content_html: "", featured_image_url: "", status: "draft", language: "en",
+    meta_title: "", meta_description: "", focus_keyword: "", canonical_url: "", og_image_url: "",
   });
+  const [storyCategories, setStoryCategories] = useState<any[]>([]);
+  const [storySelectedCats, setStorySelectedCats] = useState<string[]>([]);
+  const [storyCatSearch, setStoryCatSearch] = useState("");
+  const [storyContentRev, setStoryContentRev] = useState(0);
+  const [reviewNotes, setReviewNotes] = useState("");
+
   const [mediaStats, setMediaStats] = useState({ pending: 0, done: 0, error: 0 });
   const [mirroring, setMirroring] = useState(false);
   const [importing, setImporting] = useState(false);
