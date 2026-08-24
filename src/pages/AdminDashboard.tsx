@@ -537,6 +537,8 @@ const AdminDashboard = () => {
     const matchesLanguage = storyLanguageFilter === "all" || (story.language || "en") === storyLanguageFilter;
     return matchesSearch && matchesStatus && matchesLanguage;
   });
+  const pendingStories = stories.filter((s) => s.status === "pending");
+
 
   return (
     <>
