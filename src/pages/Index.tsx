@@ -152,7 +152,9 @@ const Index = () => {
 
   const lead = posts[0];
   const sideTop = posts.slice(1, 5);
-  const latest = posts.slice(5, 14);
+  // Latest section starts from the newest story so carousel picks also appear here
+  const latest = posts.slice(0, 12);
+
 
   // Pick top 5 categories with the most posts
   const topCats = [...cats]
