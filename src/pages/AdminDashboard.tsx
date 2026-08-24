@@ -1497,70 +1497,134 @@ const AdminDashboard = () => {
           </Tabs>
           )}
 
-          <Dialog open={storyEditorOpen} onOpenChange={setStoryEditorOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit story</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input value={storyForm.title} onChange={(event) => setStoryForm({ ...storyForm, title: event.target.value })} />
+          <GutenbergEditor
+            open={storyEditorOpen}
+            isNew={false}
+            title={storyForm.title}
+            onTitleChange={(v) => setStoryForm((f: any) => ({ ...f, title: v }))}
+            contentHtml={storyForm.content_html}
+            onContentChange={(html) => setStoryForm((f: any) => ({ ...f, content_html: html }))}
+            editorKey={`admin-${editingStory?.id || "new"}-${storyContentRev}`}
+            onClose={() => setStoryEditorOpen(false)}
+            onSaveDraft={() => saveStory(storyForm.status === "publish" ? "publish" : "draft", { close: false })}
+            onPublish={() => saveStory("publish", { notifyType: "approved" })}
+            publishLabel={storySaving ? "Saving…" : editingStory?.status === "pending" ? "Approve & publish" : "Publish"}
+            previewUrl={editingStory?.status === "publish" ? `/stories/${storyForm.slug}` : undefined}
+            postPanel={
+              <>
+                {editingStory?.status === "pending" && (
+                  <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                    <p className="text-xs font-semibold text-primary mb-1">Submitted for review</p>
+                    <p className="text-[11px] text-muted-foreground">Approve &amp; publish, request changes, or reject. Your notes are sent to the author.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label>URL slug</Label>
-                    <Input value={storyForm.slug} onChange={(event) => setStoryForm({ ...storyForm, slug: slugify(event.target.value) })} />
-                  </div>
-                </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label>Featured image</Label>
-                  <StoryImageInput value={storyForm.featured_image_url} onChange={(url) => setStoryForm({ ...storyForm, featured_image_url: url })} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Excerpt</Label>
-                  <Textarea value={storyForm.excerpt} onChange={(event) => setStoryForm({ ...storyForm, excerpt: event.target.value })} rows={2} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Content</Label>
-                  <RichTextEditor key={editingStory?.id || "admin-story"} value={storyForm.content_html} onChange={(html) => setStoryForm((current) => ({ ...current, content_html: html }))} />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select value={storyForm.language} onValueChange={(value) => setStoryForm({ ...storyForm, language: value })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="rw">Kinyarwanda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={storyForm.status} onValueChange={(value) => setStoryForm({ ...storyForm, status: value })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="publish">Published</SelectItem>
-                        <SelectItem value="pending">Pending review</SelectItem>
-                        <SelectItem value="draft">Hidden / Draft</SelectItem>
-
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes to author</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="What should the author know or fix?"
+                  />
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Button size="sm" variant="outline" disabled={storySaving} onClick={() => saveStory("draft", { notifyType: "changes_requested" })}>
+                      Request changes
+                    </Button>
+                    <Button size="sm" variant="destructive" disabled={storySaving} onClick={() => saveStory("draft", { notifyType: "rejected" })}>
+                      Reject
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setStoryEditorOpen(false)}>Cancel</Button>
-                  <Button onClick={saveStory} disabled={storySaving}>{storySaving ? "Saving..." : "Save story"}</Button>
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Status</Label>
+                  <Select value={storyForm.status} onValueChange={(value) => setStoryForm((f: any) => ({ ...f, status: value }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="publish">Published</SelectItem>
+                      <SelectItem value="pending">Pending review</SelectItem>
+                      <SelectItem value="draft">Hidden / Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Language</Label>
+                  <Select value={storyForm.language} onValueChange={(value) => setStoryForm((f: any) => ({ ...f, language: value }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="rw">Kinyarwanda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Categories</Label>
+                  <Input
+                    className="mt-2 h-8 text-xs"
+                    placeholder="Search categories…"
+                    value={storyCatSearch}
+                    onChange={(e) => setStoryCatSearch(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto mt-2 p-1">
+                    {storyCategories
+                      .filter((c) => {
+                        const q = storyCatSearch.trim().toLowerCase();
+                        return !q || `${c.name} ${c.name_rw || ""} ${c.slug}`.toLowerCase().includes(q);
+                      })
+                      .map((c) => {
+                        const on = storySelectedCats.includes(c.id);
+                        const label = storyForm.language === "rw" ? (c.name_rw || c.name) : c.name;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setStorySelectedCats((s) => on ? s.filter((x) => x !== c.id) : [...s, c.id])}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Featured image</Label>
+                  <div className="mt-2">
+                    <StoryImageInput value={storyForm.featured_image_url} onChange={(url) => setStoryForm((f: any) => ({ ...f, featured_image_url: url }))} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Excerpt</Label>
+                  <Textarea className="mt-1" rows={3} value={storyForm.excerpt} onChange={(e) => setStoryForm((f: any) => ({ ...f, excerpt: e.target.value }))} />
+                </div>
+
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">URL slug</Label>
+                  <Input className="mt-1" value={storyForm.slug} onChange={(e) => setStoryForm((f: any) => ({ ...f, slug: slugify(e.target.value) }))} />
+                </div>
+              </>
+            }
+            seoPanel={
+              <SeoPanel
+                value={{
+                  title: storyForm.title, slug: storyForm.slug, excerpt: storyForm.excerpt, content_html: storyForm.content_html,
+                  meta_title: storyForm.meta_title, meta_description: storyForm.meta_description, focus_keyword: storyForm.focus_keyword,
+                  canonical_url: storyForm.canonical_url, og_image_url: storyForm.og_image_url, featured_image_url: storyForm.featured_image_url,
+                }}
+                onChange={(patch) => {
+                  if ((patch as any).content_html !== undefined) setStoryContentRev((r) => r + 1);
+                  setStoryForm((f: any) => ({ ...f, ...patch }));
+                }}
+              />
+            }
+          />
+
         </div>
       </main>
     </>
