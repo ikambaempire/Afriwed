@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Pencil, Trash2, ExternalLink, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, ChevronDown, ChevronRight, RefreshCw, KeyRound, Copy, RotateCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
