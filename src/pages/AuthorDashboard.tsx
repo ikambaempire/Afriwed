@@ -170,9 +170,10 @@ const AuthorDashboard = () => {
   };
 
   const save = async (statusOverride?: string) => {
-    const status = statusOverride || form.status;
+    const status = statusOverride || (form.status === "publish" ? "pending" : form.status);
     if (!form.title.trim()) { toast.error("Title is required"); return; }
     if (selectedCats.length === 0) { toast.error("Choose at least one story category"); return; }
+    if (editing?.status === "publish") { toast.error("This story is published. Ask an admin to make changes."); return; }
     const slug = form.slug.trim() || slugify(form.title);
     const payload: any = {
       title: form.title, slug, excerpt: form.excerpt, content_html: formatArticle(form.content_html || ""),
@@ -185,23 +186,24 @@ const AuthorDashboard = () => {
       og_image_url: form.og_image_url || null,
       author_id: publishAs || authorId,
     };
-    if (status === "publish" && !editing?.published_at) payload.published_at = new Date().toISOString();
 
+    const successMsg = status === "pending" ? "Submitted for admin review" : "Draft saved";
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       await syncCategories(editing.id);
-      toast.success(status === "publish" ? "Article published" : "Draft saved");
+      toast.success(successMsg);
     } else {
       const { data: created, error } = await supabase.from("blog_posts").insert(payload).select("*").single();
       if (error) return toast.error(error.message);
       if (created) { await syncCategories(created.id); setEditing(created); }
-      toast.success(status === "publish" ? "Article published" : "Draft saved");
+      toast.success(successMsg);
     }
     setForm((f: any) => ({ ...f, status, slug }));
-    if (status === "publish") setOpen(false);
+    if (status === "pending") setOpen(false);
     refresh();
   };
+
 
 
 
@@ -221,8 +223,11 @@ const AuthorDashboard = () => {
   };
 
   const published = posts.filter(p => p.status === "publish");
-  const drafts = posts.filter(p => p.status !== "publish");
+  const inReview = posts.filter(p => p.status === "pending");
+  const drafts = posts.filter(p => p.status !== "publish" && p.status !== "pending");
   const totalViews = posts.reduce((s, p) => s + (p.view_count || 0), 0);
+  const statusLabel = (s: string) => s === "publish" ? "Published" : s === "pending" ? "In review" : "Draft";
+
 
   return (
     <>
@@ -241,11 +246,14 @@ const AuthorDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Published</p><p className="text-2xl font-bold">{published.length}</p></CardContent></Card>
+            <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">In review</p><p className="text-2xl font-bold">{inReview.length}</p></CardContent></Card>
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Drafts</p><p className="text-2xl font-bold">{drafts.length}</p></CardContent></Card>
             <Card><CardContent className="pt-6"><p className="text-xs text-muted-foreground">Total views</p><p className="text-2xl font-bold">{totalViews.toLocaleString()}</p></CardContent></Card>
           </div>
+          <p className="text-xs text-muted-foreground mb-8">Articles you submit go to the editorial team for review — an admin reviews, edits and publishes them.</p>
+
 
           <Tabs defaultValue="articles" className="space-y-6">
             <TabsList>
@@ -269,7 +277,7 @@ const AuthorDashboard = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold truncate">{p.title}</h3>
-                              <Badge variant={p.status === "publish" ? "default" : "secondary"} className="shrink-0">{p.status}</Badge>
+                              <Badge variant={p.status === "publish" ? "default" : p.status === "pending" ? "outline" : "secondary"} className="shrink-0">{statusLabel(p.status)}</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground flex items-center gap-3">
                               <span><Eye className="w-3 h-3 inline mr-1" />{p.view_count || 0}</span>
@@ -279,9 +287,10 @@ const AuthorDashboard = () => {
                           </div>
                           <div className="flex gap-1">
                             {p.status === "publish" && <Button asChild size="sm" variant="ghost"><Link to={`/stories/${p.slug}`} target="_blank"><Eye className="w-4 h-4" /></Link></Button>}
-                            <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><PenLine className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            {p.status !== "publish" && <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><PenLine className="w-4 h-4" /></Button>}
+                            {p.status !== "publish" && <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                           </div>
+
                         </div>
                       ))}
                     </div>
@@ -348,21 +357,23 @@ const AuthorDashboard = () => {
           editorKey={`${editing?.id || "new"}-${contentRev}`}
           onClose={() => setOpen(false)}
           onSaveDraft={() => save("draft")}
-          onPublish={() => save(form.status === "publish" ? "publish" : "publish")}
-          publishLabel={editing?.status === "publish" ? "Update" : "Publish"}
+          onPublish={() => save("pending")}
+          publishLabel={editing?.status === "pending" ? "Resubmit for review" : "Submit for review"}
           previewUrl={editing?.status === "publish" ? `/stories/${form.slug}` : undefined}
           postPanel={
             <>
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Status</Label>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                <Select value={form.status === "publish" ? "pending" : form.status} onValueChange={v => setForm({ ...form, status: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="publish">Published</SelectItem>
+                    <SelectItem value="pending">Submitted for review</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Only admins can publish. Submitted stories go to the editorial review queue.</p>
               </div>
+
 
               <div>
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">Publish as</Label>
