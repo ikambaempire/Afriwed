@@ -15,11 +15,15 @@ const StoryShareButton = ({ slug, title, excerpt, version, className }: StorySha
   const [copied, setCopied] = useState(false);
 
   const shareStory = async () => {
-    const shareOrigin = window.location.hostname.endsWith("lovable.app")
-      ? "https://afriwedd.lovable.app"
-      : window.location.origin;
-    const url = new URL(`/stories/${encodeURIComponent(slug)}`, shareOrigin);
-    if (version) url.searchParams.set("share", new Date(version).getTime().toString(36));
+    // Lovable hosting serves a static SPA shell, so crawlers can't read per-story
+    // tags from the React route. This endpoint returns real OG tags and then
+    // redirects real visitors to the story page.
+    const url = new URL(
+      "https://uoxajklqakmjppejqlor.supabase.co/functions/v1/story-share",
+    );
+    url.searchParams.set("slug", slug);
+    if (version) url.searchParams.set("v", new Date(version).getTime().toString(36));
+
 
     const shareData = {
       title,
