@@ -48,6 +48,12 @@ Deno.serve(async (req) => {
     return Response.redirect(`${SITE_URL}/stories`, 302);
   }
 
+  const ua = (req.headers.get("user-agent") ?? "").toLowerCase();
+  const isBot = /whatsapp|facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|telegrambot|discordbot|pinterest|skypeuripreview|googlebot|bingbot|embedly|quora|redditbot|vkshare|applebot|iframely|snapchat|viber|kakaotalk|bot|crawler|spider|preview/.test(ua);
+  if (!isBot) {
+    return new Response(null, { status: 302, headers: { ...corsHeaders, Location: target } });
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
