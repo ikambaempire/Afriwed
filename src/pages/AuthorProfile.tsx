@@ -10,7 +10,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Calendar } from "lucide-react";
 
 const PAGE_SIZE = 12;
-const BASE = "https://haruwa1.lovable.app";
+const BASE = "https://afriwedd.lovable.app";
 
 const AuthorProfile = () => {
   const { slug } = useParams();
