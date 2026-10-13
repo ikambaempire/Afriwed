@@ -69,13 +69,13 @@ const Stories = () => {
   return (
     <>
       <Helmet>
-        <title>Stories & Editorial — Afriwedd | Afriwedd</title>
+        <title>Stories & Editorial — Afriwedd</title>
         <meta name="description" content="Real African wedding stories, cultural inspiration, planning guides, and editorial coverage from across the continent." />
-        <link rel="canonical" href="https://haruwa1.lovable.app/stories" />
-        <meta property="og:url" content="https://haruwa1.lovable.app/stories" />
+        <link rel="canonical" href="https://afriwedd.lovable.app/stories" />
+        <meta property="og:url" content="https://afriwedd.lovable.app/stories" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org", "@type": "Blog",
-          name: "Afriwedd Editorial", url: "https://haruwa1.lovable.app/stories",
+          name: "Afriwedd Editorial", url: "https://afriwedd.lovable.app/stories",
         })}</script>
       </Helmet>
       <Header />
