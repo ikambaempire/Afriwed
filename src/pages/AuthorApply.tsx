@@ -56,7 +56,7 @@ const AuthorApply = () => {
       <Helmet>
         <title>Become an Afriwedd Author</title>
         <meta name="description" content="Apply to write stories and editorials for Afriwedd." />
-        <link rel="canonical" href="https://afriwedd.lovable.app/author-apply" />
+        <link rel="canonical" href="https://haruwa1.lovable.app/author-apply" />
       </Helmet>
       <Header />
       <main className="pt-24 pb-16 bg-background min-h-screen">
